@@ -57,5 +57,5 @@ class SSDDetector(BaseDetector):
             xmax = int(box[4] * np.array(orig_images[0]).shape[1] / IMG_WIDTH)
             ymax = int(box[5] * np.array(orig_images[0]).shape[0] / IMG_HEIGHT)
             res = [xmin, ymin, xmax, ymax]
-            result.append([res])
+            result.append(res)
         return result

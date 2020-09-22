@@ -2,6 +2,7 @@ import argparse
 import bios
 import imageio
 import cv2
+import csv
 
 from run_ssd import SSDDetector
 from run_yolo import YOLODetector
@@ -34,6 +35,14 @@ def load_args():
     return p.parse_args()
 
 
+def detections_to_csv(detections, frame_num):
+    filepath = f"{args.tmp_folder}/csv/frame{frame_num}.csv"
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for d in detections:
+            writer.writerow(d)
+
+
 if __name__ == "__main__":
     args = load_args()
     if args.detector == "ssd":
@@ -47,8 +56,10 @@ if __name__ == "__main__":
         video = imageio.get_reader(args.video, "ffmpeg")
         image = video.get_data(x)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image_path = f"{args.tmp_folder}/frame.jpeg"
+        image_path = f"{args.tmp_folder}/img/frame{x}.jpeg"
         cv2.imwrite(image_path, image)
         
-        detector.find_heads(img_path=image_path,
-                            cfg=detector_cfg)
+        detections = detector.find_heads(img_path=image_path,
+                                         cfg=detector_cfg)
+        detections_to_csv(detections=detections,
+                          frame_num=x)

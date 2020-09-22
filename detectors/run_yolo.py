@@ -36,5 +36,5 @@ class YOLODetector(BaseDetector):
             xmax = int(box.xmax * image_w)
             ymax = int(box.ymax * image_h)
             res = [xmin, ymin, xmax, ymax]
-            result.append([res])
+            result.append(res)
         return result
