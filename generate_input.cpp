@@ -12,56 +12,83 @@
 #include <opencv2/opencv.hpp>
 
 
-int get_trimmed_frames_cnt(const cv::VideoCapture& cap, uint8_t frames_in_segment) {
+int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment) {
+    // calculates max length of video in frames if it has to be a multiple of frames_in_segment
     int video_in_frame_cnt = cap.get(cv::CAP_PROP_FRAME_COUNT);
     std::cout << "Input video frames count: " << video_in_frame_cnt << std::endl;
     return video_in_frame_cnt / frames_in_segment * frames_in_segment;
 }
 
-void trim_video(std::string video_in, std::string video_out, int frames_cnt) {	
+void trim_video(std::string video_in, std::string video_out, int frame_cnt) {
+    // trims video stored at video_in path to frame_cnt frames
     std::stringstream ss;
-    ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frames_cnt) << " -acodec copy -vcodec copy " << video_out << " -y";
+    ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) << " -acodec copy -vcodec copy " << video_out << " -y";
     std::string trim_command = ss.str();
     system(trim_command.c_str());
 }
 
-void create_net_cost_matrix() {
-
+void detect(std::string detector, std::string detector_cfg, int segment_size, int frame_cnt) {
+    // initiates object detections on selected frames of the trimmed video
+    std::stringstream ss;
+    ss << "python3 ../detectors/detect.py --detector " << detector 
+       << " --cfg " << detector_cfg
+       << " --segment_size " << std::to_string(segment_size) 
+       << " --frame_cnt " << std::to_string(frame_cnt);
+    std::string detect_command = ss.str();
+    system(detect_command.c_str());
 }
 
-void save_input() {
+// void load_detections() {
 
-}
+// }
+
+// void create_net_cost_matrix() {
+
+// }
+
+// void save_input() {
+
+// }
 
 int main(int argc, char **argv) {
-    uint8_t segment_size;
-    uint8_t segment_cnt;
+    int segment_size = 0;
     std::string input_video;
     std::string output_video;
+    std::string detector;
+    std::string detector_cfg;
+    std::string tmp_fixtures;
 
     const char* usage_info =
-    "    -s, --segment_size   frames in a segment\n"
-    "    -c, --segment_cnt    number of segments\n"
-    "    -i, --input_video    frames in a segment\n"
-    "    -o, --output_video   frames in a segment\n"
-    "    -h, --help           show this help msg";
+    "\n    -s, --segment_size   frames in a segment\n"
+    "    -i, --input_video      input video path\n"
+    "    -o, --output_video     output video path\n"
+    "    -d, --detector         object detector (ssd or yolo)\n"
+    "    -c, --detector_cfg     path to detector cfg\n"
+    "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
+    "    -h, --help             show this help msg";
 
     int opt;
-    while((opt = getopt(argc, argv, "s:c:i:o:h")) != -1)
+    while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
     {
         switch (opt)
         {
             case 's':
                 segment_size = std::stoi(optarg);
                 break;
-            case 'c':
-                segment_cnt = std::stoi(optarg);
-                break;
             case 'i':
                 input_video = optarg;
                 break;
             case 'o':
                 output_video = optarg;
+                break;
+            case 'd':
+                detector = optarg;
+                break;
+            case 'c':
+                detector_cfg = optarg;
+                break;
+            case 'f':
+                tmp_fixtures = optarg;
                 break;
             case 'h':
                 std::cout << "Please provide the following arguments:\n" << usage_info;
@@ -73,23 +100,52 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (segment_cnt == 0)
-        segment_cnt = 18;
     if (segment_size == 0)
-        segment_size = 10;
+    {
+        std::cout << "Please specify segment size. Aborting.";
+        exit(0);
+    }
     if (input_video == "")
-        input_video = "/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/fixtures/input/pets3s.mp4";
+    {
+        std::cout << "Please specify input video path. Aborting.";
+        exit(0);
+    }
     if (output_video == "")
-        output_video = "/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/fixtures/output/output.mp4";
+    {
+        std::cout << "Please specify output video path. Aborting.";
+        exit(0);
+    }
+    if (detector != "yolo" && detector != "ssd")
+    {
+        std::cout << "Unsupported detector. Aborting.";
+        exit(0);
+    }
+    if (detector_cfg == "")
+    {
+        std::cout << "Please specify detector config path. Aborting.";
+        exit(0);
+    }
+    if (tmp_fixtures == "")
+    {
+        std::cout << "Please specify path where tmp files should be stored. Aborting.";
+        exit(0);
+    }
 
-    printf("Running with configuration:\nsegment_size = %d\nsegment_cnt = %d\ninput_video = %s\noutput_video = %s\n", segment_size, segment_cnt, input_video.c_str(), output_video.c_str());
+    printf("Segment size set to %d\n", segment_size);
+    printf("Input video path set to %s\n", input_video.c_str());
+    printf("Output video path set to %s\n", output_video.c_str());
+    printf("Detector set to %s\n", detector.c_str());
+    printf("Detector cfg path set to %s\n", detector_cfg.c_str());
+    printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
 
-    std::string const trimmed_video = "/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/fixtures/tmp/tmp.mp4";
+    std::string const trimmed_video = tmp_fixtures + "tmp.mp4";
 
     cv::VideoCapture in_cap(input_video);
-    auto trimmed_video_frames_cnt = get_trimmed_frames_cnt(in_cap, segment_size);
-    trim_video(input_video, trimmed_video, trimmed_video_frames_cnt);
-    std::cout << "Input video frames count cut to: " << trimmed_video_frames_cnt << std::endl;
+    auto trimmed_video_frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
+    trim_video(input_video, trimmed_video, trimmed_video_frame_cnt);
+    std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
+
+    detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt);
 
     return 0;
 }
