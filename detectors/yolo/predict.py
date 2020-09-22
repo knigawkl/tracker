@@ -70,7 +70,7 @@ def _main_():
         boxes = yolo.predict(image)
         image = draw_boxes(image, boxes, config['model']['labels'])
 
-        print(len(boxes), 'boxes are found')
+        print("Boxes found: ", len(boxes))
 
         cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
 

@@ -19,7 +19,8 @@ class YOLO(object):
                        input_size, 
                        labels, 
                        max_box_per_image,
-                       anchors):
+                       anchors,
+                       backend_path):
 
         self.input_size = input_size
         
@@ -46,7 +47,7 @@ class YOLO(object):
         elif backend == 'MobileNet':
             self.feature_extractor = MobileNetFeature(self.input_size)
         elif backend == 'Full Yolo':
-            self.feature_extractor = FullYoloFeature(self.input_size)
+            self.feature_extractor = FullYoloFeature(self.input_size, backend_path)
         elif backend == 'Tiny Yolo':
             self.feature_extractor = TinyYoloFeature(self.input_size)
         elif backend == 'VGG16':

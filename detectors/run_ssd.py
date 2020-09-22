@@ -12,12 +12,10 @@ from base import BaseDetector
 
 IMG_HEIGHT = 512
 IMG_WIDTH = 512
-CONF_THRESH = 0.01
-WEIGHTS_PATH = '/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/detectors/ssd/data/ssd512-hollywood-trainval-bs_16-lr_1e-05-scale_pascal-epoch-187-py3.6.h5'
 
 
 class SSDDetector(BaseDetector):
-    def find_heads(self, img_path: str, cfg: dict, confidence_thresh: float) -> []:
+    def find_heads(self, img_path: str, cfg: dict) -> []:
         ssd_loss = SSDLoss(neg_pos_ratio=3, n_neg_min=0, alpha=1.0)
 
         # Clear previous models from memory.
@@ -25,12 +23,12 @@ class SSDDetector(BaseDetector):
 
         decode_layer = DecodeDetections(img_height=IMG_HEIGHT,
                                         img_width=IMG_WIDTH,
-                                        confidence_thresh=CONF_THRESH,
-                                        iou_threshold=0.45,
-                                        top_k=200,
-                                        nms_max_output_size=400)
+                                        confidence_thresh=cfg["confidence_threshold"],
+                                        iou_threshold=cfg["iou_threshold"],
+                                        top_k=cfg["top_k"],
+                                        nms_max_output_size=cfg["nms_max_output_size"])
 
-        model = load_model(WEIGHTS_PATH, custom_objects={'AnchorBoxes': AnchorBoxes,
+        model = load_model(cfg["weights"], custom_objects={'AnchorBoxes': AnchorBoxes,
                                                          'L2Normalization': L2Normalization,
                                                          'DecodeDetections': decode_layer,
                                                          'compute_loss': ssd_loss.compute_loss})
@@ -45,7 +43,7 @@ class SSDDetector(BaseDetector):
 
         y_pred = model.predict(input_images)
 
-        y_pred_thresh = [y_pred[k][y_pred[k, :, 1] > confidence_thresh] for k in range(y_pred.shape[0])]
+        y_pred_thresh = [y_pred[k][y_pred[k, :, 1] > cfg["confidence_threshold"]] for k in range(y_pred.shape[0])]
         np.set_printoptions(precision=2, suppress=True, linewidth=90)
         logger.info("Predicted boxes:\n")
         logger.info('   class   conf xmin   ymin   xmax   ymax')

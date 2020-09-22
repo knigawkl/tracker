@@ -27,12 +27,14 @@ void trim_video(std::string video_in, std::string video_out, int frame_cnt) {
     system(trim_command.c_str());
 }
 
-void detect(std::string detector, std::string detector_cfg, int segment_size, int frame_cnt) {
+void detect(std::string detector, std::string detector_cfg, int segment_size, int frame_cnt, std::string video, std::string tmp_folder) {
     // initiates object detections on selected frames of the trimmed video
     std::stringstream ss;
     ss << "python3 ../detectors/detect.py --detector " << detector 
        << " --cfg " << detector_cfg
        << " --segment_size " << std::to_string(segment_size) 
+       << " --video " << video
+       << " --tmp_folder " << tmp_folder
        << " --frame_cnt " << std::to_string(frame_cnt);
     std::string detect_command = ss.str();
     system(detect_command.c_str());
@@ -145,7 +147,7 @@ int main(int argc, char **argv) {
     trim_video(input_video, trimmed_video, trimmed_video_frame_cnt);
     std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
 
-    detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt);
+    detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
 
     return 0;
 }

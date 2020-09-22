@@ -1,5 +1,7 @@
 import argparse
 import bios
+import imageio
+import cv2
 
 from run_ssd import SSDDetector
 from run_yolo import YOLODetector
@@ -17,6 +19,12 @@ def load_args():
                     type=str,
                     help="detectors cfg",
                     default="config.yaml")
+    p.add_argument("--video",
+                    type=str,
+                    help="input video path")
+    p.add_argument("--tmp_folder",
+                    type=str,
+                    help="tmp folder path")
     p.add_argument("--segment_size",
                     type=int,
                     required=True)
@@ -34,9 +42,13 @@ if __name__ == "__main__":
         detector = YOLODetector()
     detector_cfg = bios.read(args.cfg)[args.detector]
 
-    logger.info(int(args.frame_cnt))
-    logger.info(int(args.segment_size))
-
     for x in range(0, int(args.frame_cnt), int(args.segment_size)):
         logger.info(f"Performing detection on frame {x}")
-        # detector.find_heads()
+        video = imageio.get_reader(args.video, "ffmpeg")
+        image = video.get_data(x)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image_path = f"{args.tmp_folder}/frame.jpeg"
+        cv2.imwrite(image_path, image)
+        
+        detector.find_heads(img_path=image_path,
+                            cfg=detector_cfg)

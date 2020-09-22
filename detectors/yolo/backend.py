@@ -8,7 +8,6 @@ from keras.applications import InceptionV3
 from keras.applications.vgg16 import VGG16
 from keras.applications.resnet50 import ResNet50
 
-FULL_YOLO_BACKEND_PATH  = "/home/lk/Desktop/gmcp-tracker/detectors/yolo/full_yolo_backend.h5"   # should be hosted on a server
 TINY_YOLO_BACKEND_PATH  = "tiny_yolo_backend.h5"   # should be hosted on a server
 SQUEEZENET_BACKEND_PATH = "squeezenet_backend.h5"  # should be hosted on a server
 MOBILENET_BACKEND_PATH  = "mobilenet_backend.h5"   # should be hosted on a server
@@ -35,7 +34,7 @@ class BaseFeatureExtractor(object):
 
 class FullYoloFeature(BaseFeatureExtractor):
     """docstring for ClassName"""
-    def __init__(self, input_size):
+    def __init__(self, input_size, backend_path):
         input_image = Input(shape=(input_size, input_size, 3))
 
         # the function to implement the orgnization layer (thanks to github.com/allanzelener/YAD2K)
@@ -164,7 +163,7 @@ class FullYoloFeature(BaseFeatureExtractor):
         x = LeakyReLU(alpha=0.1)(x)
 
         self.feature_extractor = Model(input_image, x)  
-        self.feature_extractor.load_weights(FULL_YOLO_BACKEND_PATH)
+        self.feature_extractor.load_weights(backend_path)
 
     def normalize(self, image):
         return image / 255.

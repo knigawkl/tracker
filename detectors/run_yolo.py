@@ -11,26 +11,25 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 class YOLODetector(BaseDetector):
-    def find_heads(self, img_path: str, cfg: dict, confidence_thresh: float = 0.5) -> []:
-        weights_path = '/home/lk/Desktop/gmcp-tracker/detectors/yolo/model.h5'
-
+    def find_heads(self, img_path: str, cfg: dict) -> []:
         yolo = YOLO(backend=cfg['backend'],
                     input_size=cfg['input_size'],
                     labels=cfg['labels'],
                     max_box_per_image=cfg['max_box_per_image'],
-                    anchors=cfg['anchors'])
+                    anchors=cfg['anchors'],
+                    backend_path=cfg['backend_path'])
 
-        yolo.load_weights(weights_path)
+        yolo.load_weights(cfg["weights"])
         image = cv2.imread(img_path)
         boxes = yolo.predict(image)
-        logger.info(f"{len(boxes)} boxes are found")
+        logger.info(f"Boxes found: {len(boxes)}")
         logger.info(boxes)
 
         image_h, image_w, _ = image.shape
 
         result = []
         for box in boxes:
-            if box.get_score() < confidence_thresh:
+            if box.get_score() < cfg['confidence_threshold']:
                 continue
             xmin = int(box.xmin * image_w)
             ymin = int(box.ymin * image_h)
