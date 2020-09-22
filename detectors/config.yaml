@@ -1,0 +1,10 @@
+ssd:
+  confidence_threshold: 0.1
+yolo:
+  cuda_devices_count: 1
+  confidence_threshold: 0.5
+  max_box_per_image: 100
+  backend: "Full Yolo"
+  input_size: 416
+  labels: ["head"]
+  anchors: [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828]
