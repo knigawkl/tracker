@@ -82,7 +82,7 @@ std::vector<BoundingBox> load_detections(std::string csv_file) {
     return boxes;
 }
 
-void create_invariant_histogram(std::string img_path) {
+auto get_invariant_histogram(std::string img_path) {
     constexpr int const depth = 32;
     cv::Mat img = cv::imread(img_path, cv::IMREAD_COLOR);
     cv::Mat normalized_img;
@@ -130,14 +130,14 @@ void create_invariant_histogram(std::string img_path) {
         }
     }
     auto *histo_ptr = histo;
-    // return histo_ptr;
+    return histo_ptr;
 }
 
-// void create_net_cost_matrix() {
+void get_detections_centers() {
 
-// }
+}
 
-// void save_input() {
+// void get_net_cost_matrix() {
 
 // }
 
@@ -255,9 +255,10 @@ int main(int argc, char **argv) {
 
     detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
 
-    int size = trimmed_video_frame_cnt / segment_size;
-    std::vector <BoundingBox> detections[size];
-    for (int i = 0; i < trimmed_video_frame_cnt; i += segment_size) {
+    int segment_cnt = trimmed_video_frame_cnt / segment_size;
+    std::vector <BoundingBox> detections[segment_cnt];
+    for (int i = 0; i < trimmed_video_frame_cnt; i += segment_size) 
+    {
         std::cout << "Loading detections of frame " << i << std::endl;
         std::stringstream ss;
         ss << tmp_fixtures << "/csv/frame" << i << ".csv";
@@ -265,7 +266,18 @@ int main(int argc, char **argv) {
         detections[i/segment_size] = load_detections(csv_path);
     }
 
-    create_invariant_histogram("/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/fixtures/tmp/img/frame0.jpeg");
+    unsigned int max_detections_per_frame = 0;
+    for (int i = 0; i < segment_cnt; i++) {
+        std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
+        // get center_mat
+
+        // get histo_root
+        
+        
+        // get net_cost_mat
+    }
+
+
     // clear_tmp(tmp_fixtures);
     return 0;
 }
