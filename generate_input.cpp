@@ -24,11 +24,13 @@ void trim_video(std::string video_in, std::string video_out, int frame_cnt) {
     std::stringstream ss;
     ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) << " -acodec copy -vcodec copy " << video_out << " -y";
     std::string trim_command = ss.str();
+    std::cout << "Executing: " << trim_command;
     system(trim_command.c_str());
 }
 
 void detect(std::string detector, std::string detector_cfg, int segment_size, int frame_cnt, std::string video, std::string tmp_folder) {
     // initiates object detections on selected frames of the trimmed video
+    // the detections are then stored in csv files
     std::stringstream ss;
     ss << "python3 ../detectors/detect.py --detector " << detector 
        << " --cfg " << detector_cfg
@@ -37,6 +39,7 @@ void detect(std::string detector, std::string detector_cfg, int segment_size, in
        << " --tmp_folder " << tmp_folder
        << " --frame_cnt " << std::to_string(frame_cnt);
     std::string detect_command = ss.str();
+    std::cout << "Executing: " << detect_command;
     system(detect_command.c_str());
 }
 
@@ -51,6 +54,22 @@ void detect(std::string detector, std::string detector_cfg, int segment_size, in
 // void save_input() {
 
 // }
+
+void make_tmp_dirs(std::string tmp_folder) {
+    std::stringstream ss;
+    ss << "mkdir " << tmp_folder << "/img " << tmp_folder << "/csv";
+    std::string mkdir_command = ss.str();
+    std::cout << "Executing: " << mkdir_command;
+    system(mkdir_command.c_str());
+}
+
+void clear_tmp(std::string tmp_folder) {
+    std::stringstream ss;
+    ss << "exec rm -r " << tmp_folder << "/*";
+    std::string del_command = ss.str();
+    std::cout << "Executing: " << del_command;
+    system(del_command.c_str());
+}
 
 int main(int argc, char **argv) {
     int segment_size = 0;
@@ -140,6 +159,7 @@ int main(int argc, char **argv) {
     printf("Detector cfg path set to %s\n", detector_cfg.c_str());
     printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
 
+    make_tmp_dirs(tmp_fixtures);
     std::string const trimmed_video = tmp_fixtures + "tmp.mp4";
 
     cv::VideoCapture in_cap(input_video);
@@ -148,6 +168,13 @@ int main(int argc, char **argv) {
     std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
 
     detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
+
+    // załadować do ramu detekcje analizowanej klatki
+    // for x in range(0, int(args.frame_cnt), int(args.segment_size)):
+    for (int i = 0; i < trimmed_video_frame_cnt; i+=segment_size)
+        std::cout << i << std::endl;
+
+    // clear_tmp(tmp_fixtures);
 
     return 0;
 }

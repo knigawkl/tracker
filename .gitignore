@@ -4,6 +4,7 @@ fixtures/*
 *.h5
 detectors/ssd/data/*
 detectors/yolo/data/*
+.vscode/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c++
