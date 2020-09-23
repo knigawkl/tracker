@@ -13,6 +13,7 @@
 #include <algorithm> 
 
 #include "gmcp.hpp"
+#include "utils.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -137,25 +138,11 @@ void get_detections_centers() {
 
 }
 
+
+
 // void get_net_cost_matrix() {
 
 // }
-
-void make_tmp_dirs(std::string tmp_folder) {
-    std::stringstream ss;
-    ss << "mkdir " << tmp_folder << "/img " << tmp_folder << "/csv";
-    std::string mkdir_command = ss.str();
-    std::cout << "Executing: " << mkdir_command << std::endl;
-    system(mkdir_command.c_str());
-}
-
-void clear_tmp(std::string tmp_folder) {
-    std::stringstream ss;
-    ss << "exec rm -r " << tmp_folder << "/*";
-    std::string del_command = ss.str();
-    std::cout << "Executing: " << del_command << std::endl;
-    system(del_command.c_str());
-}
 
 int main(int argc, char **argv) {
     int segment_size = 0;
@@ -277,7 +264,6 @@ int main(int argc, char **argv) {
         // get net_cost_mat
     }
 
-
-    // clear_tmp(tmp_fixtures);
+    clear_tmp(tmp_fixtures);
     return 0;
 }
