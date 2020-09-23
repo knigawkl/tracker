@@ -7,6 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(GMCP)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
-add_executable(generate_input generate_input.cpp)
-target_link_libraries(generate_input ${OpenCV_LIBS})
+add_executable(gmcp gmcp.cpp)
+target_link_libraries(gmcp ${OpenCV_LIBS})
 

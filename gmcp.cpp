@@ -12,7 +12,7 @@
 #include <cmath>
 #include <algorithm> 
 
-#include "generate_input.hpp"
+#include "gmcp.hpp"
 
 #include <opencv2/opencv.hpp>
 
