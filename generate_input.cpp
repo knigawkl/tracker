@@ -4,8 +4,11 @@
 #include <string>
 #include <string_view>
 #include <iostream>
+#include <fstream> 
 #include <sstream>
 #include <cstdlib>
+#include <vector>
+#include <stdexcept>
 
 #include "generate_input.hpp"
 
@@ -24,7 +27,7 @@ void trim_video(std::string video_in, std::string video_out, int frame_cnt) {
     std::stringstream ss;
     ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) << " -acodec copy -vcodec copy " << video_out << " -y";
     std::string trim_command = ss.str();
-    std::cout << "Executing: " << trim_command;
+    std::cout << "Executing: " << trim_command << std::endl;
     system(trim_command.c_str());
 }
 
@@ -39,13 +42,43 @@ void detect(std::string detector, std::string detector_cfg, int segment_size, in
        << " --tmp_folder " << tmp_folder
        << " --frame_cnt " << std::to_string(frame_cnt);
     std::string detect_command = ss.str();
-    std::cout << "Executing: " << detect_command;
+    std::cout << "Executing: " << detect_command << std::endl;
     system(detect_command.c_str());
 }
 
-// void load_detections() {
+std::vector<BoundingBox> load_detections(std::string csv_file) {
+    std::vector<BoundingBox> boxes;
+    std::ifstream f(csv_file);
+    std::string line, colname;
+    int val;
 
-// }
+    std::cout << "Loading detections from " << csv_file << std::endl;
+
+    if(!f.is_open()) 
+         throw std::runtime_error("Could not open file");
+
+    while(std::getline(f, line))
+    {
+        std::stringstream ss(line); 
+        int coords[4];
+        constexpr int const coord_cnt = 4; 
+        for (int i = 0; i < coord_cnt; i++)
+        {
+            std::string substr;
+            getline(ss, substr, ',');
+            coords[i] = std::stoi(substr);
+        }
+        BoundingBox box = {
+            .x_min = coords[0],
+            .y_min = coords[1],
+            .x_max = coords[2],
+            .y_max = coords[3]
+        };
+        boxes.push_back(box);
+    }
+    f.close();
+    return boxes;
+}
 
 // void create_net_cost_matrix() {
 
@@ -59,7 +92,7 @@ void make_tmp_dirs(std::string tmp_folder) {
     std::stringstream ss;
     ss << "mkdir " << tmp_folder << "/img " << tmp_folder << "/csv";
     std::string mkdir_command = ss.str();
-    std::cout << "Executing: " << mkdir_command;
+    std::cout << "Executing: " << mkdir_command << std::endl;
     system(mkdir_command.c_str());
 }
 
@@ -67,7 +100,7 @@ void clear_tmp(std::string tmp_folder) {
     std::stringstream ss;
     ss << "exec rm -r " << tmp_folder << "/*";
     std::string del_command = ss.str();
-    std::cout << "Executing: " << del_command;
+    std::cout << "Executing: " << del_command << std::endl;
     system(del_command.c_str());
 }
 
@@ -112,11 +145,11 @@ int main(int argc, char **argv) {
                 tmp_fixtures = optarg;
                 break;
             case 'h':
-                std::cout << "Please provide the following arguments:\n" << usage_info;
+                std::cout << "Please provide the following arguments:\n" << usage_info << std::endl;
                 exit(0);
             default:
-                std::cout << "Unsupported parameter passed to the script. Aborting.";
-                std::cout << usage_info;
+                std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
+                std::cout << usage_info << std::endl;
                 abort();
         }
     }
@@ -169,12 +202,16 @@ int main(int argc, char **argv) {
 
     detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
 
-    // załadować do ramu detekcje analizowanej klatki
-    // for x in range(0, int(args.frame_cnt), int(args.segment_size)):
-    for (int i = 0; i < trimmed_video_frame_cnt; i+=segment_size)
-        std::cout << i << std::endl;
+    int size = trimmed_video_frame_cnt / segment_size;
+    std::vector <BoundingBox> detections[size];
+    for (int i = 0; i < trimmed_video_frame_cnt; i += segment_size) {
+        std::cout << "Loading detections of frame " << i << std::endl;
+        std::stringstream ss;
+        ss << tmp_fixtures << "/csv/frame" << i << ".csv";
+        std::string csv_path = ss.str();
+        detections[i] = load_detections(csv_path);
+    }
 
     // clear_tmp(tmp_fixtures);
-
     return 0;
 }
