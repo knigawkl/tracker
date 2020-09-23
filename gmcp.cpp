@@ -134,8 +134,8 @@ auto get_invariant_histogram(std::string img_path) {
     return histo_ptr;
 }
 
-void get_detections_centers() {
-
+void get_detection_centers(std::vector<BoundingBox> detections) {
+    
 }
 
 
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
 
     int segment_cnt = trimmed_video_frame_cnt / segment_size;
-    std::vector <BoundingBox> detections[segment_cnt];
+    std::vector<BoundingBox> detections[segment_cnt];
     for (int i = 0; i < trimmed_video_frame_cnt; i += segment_size) 
     {
         std::cout << "Loading detections of frame " << i << std::endl;
@@ -254,9 +254,13 @@ int main(int argc, char **argv) {
     }
 
     unsigned int max_detections_per_frame = 0;
+    for(auto const& d : detections)
+        if (d.size() > max_detections_per_frame)
+            max_detections_per_frame = d.size();
+    std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl; 
     for (int i = 0; i < segment_cnt; i++) {
         std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
-        // get center_mat
+        get_detection_centers(detections[i]);
 
         // get histo_root
         
