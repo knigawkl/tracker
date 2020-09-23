@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
         std::stringstream ss;
         ss << tmp_fixtures << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
-        detections[i] = load_detections(csv_path);
+        detections[i/segment_size] = load_detections(csv_path);
     }
 
     // clear_tmp(tmp_fixtures);
