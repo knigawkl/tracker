@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
         cp(input_video, tmp_video);
     }
 
-    // detect(detector, detector_cfg, trimmed_video_frame_cnt, input_video, tmp_fixtures);
+    detect(detector, detector_cfg, trimmed_video_frame_cnt - 1, tmp_video, tmp_fixtures);
 
     
     // std::vector<BoundingBox> detections[trimmed_video_frame_cnt];

@@ -60,3 +60,12 @@ if __name__ == "__main__":
                                          cfg=detector_cfg)
         detections_to_csv(detections=detections,
                           frame_num=x)
+
+        # since there where problems with operating on last frames of videos, 
+        # I assume that the last frame was just the same as previous one
+        if x == int(args.frame_cnt) - 1:
+            detections_to_csv(detections=detections,
+            frame_num=x+1)
+            image_path = f"{args.tmp_folder}/img/frame{x+1}.jpeg"
+            cv2.imwrite(image_path, image)
+
