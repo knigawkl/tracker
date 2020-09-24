@@ -268,23 +268,21 @@ int main(int argc, char **argv) {
     }
 
     detect(detector, detector_cfg, trimmed_video_frame_cnt - 1, tmp_video, tmp_fixtures);
+    std::vector<BoundingBox> detections[trimmed_video_frame_cnt];
+    for (int i = 0; i < trimmed_video_frame_cnt; i += 1) 
+    {
+        std::cout << "Loading detections of frame " << i << std::endl;
+        std::stringstream ss;
+        ss << tmp_fixtures << "/csv/frame" << i << ".csv";
+        std::string csv_path = ss.str();
+        detections[i] = load_detections(csv_path);
+    }
 
-    
-    // std::vector<BoundingBox> detections[trimmed_video_frame_cnt];
-    // for (int i = 0; i < trimmed_video_frame_cnt; i += 1) 
-    // {
-    //     std::cout << "Loading detections of frame " << i << std::endl;
-    //     std::stringstream ss;
-    //     ss << tmp_fixtures << "/csv/frame" << i << ".csv";
-    //     std::string csv_path = ss.str();
-    //     detections[i] = load_detections(csv_path);
-    // }
-
-    // unsigned int max_detections_per_frame = 0;
-    // for(auto const& d : detections)
-    //     if (d.size() > max_detections_per_frame)
-    //         max_detections_per_frame = d.size();
-    // std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
+    unsigned int max_detections_per_frame = 0;
+    for(auto const& d : detections)
+        if (d.size() > max_detections_per_frame)
+            max_detections_per_frame = d.size();
+    std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
 
     // int segment_cnt = trimmed_video_frame_cnt / segment_size;
     // // float histo[segment_cnt][segment_size][max_detections_per_frame] net_cost = {0}; // to zamienić na wektor
