@@ -92,73 +92,6 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
-auto get_invariant_histogram(std::string img_path) 
-{
-    constexpr int const depth = 32;
-    cv::Mat img = cv::imread(img_path, cv::IMREAD_COLOR);
-    cv::Mat normalized_img;
-    cv::Mat channel1, channel2, channel3;
-    std::vector<cv::Mat> channels(3);
-    cv::Mat fx, gx, fy, gy;
-    cv::Mat gim, fim;
-    if(img.empty())
-    {
-        std::cout << "Could not read the image: " << img_path << std::endl;
-        abort();
-    }
-    img.convertTo(normalized_img, CV_32FC3, 1.f/255);
-    int width = normalized_img.cols;
-    int height = normalized_img.rows;
-
-    float kernel_data[] = {-1, 0, 1};
-    cv::Mat kernel(1, 3, CV_32F, kernel_data); // [-1, 0, 1]
-    cv::Mat kernel_trans(3, 1, CV_32F, kernel_data);
-
-    split(normalized_img, channels);
-    channel1 = channels[0];
-    channel2 = channels[1];
-    channel3 = channels[2];
-
-    gim = 0.5 * channels[2] + 0.5 * channels[1];
-    fim = channels[0];
-
-    cv::filter2D(fim, fx, CV_32F, kernel);
-    cv::filter2D(gim, gx, CV_32F, kernel);
-    cv::filter2D(fim, fy, CV_32F, kernel_trans);
-    cv::filter2D(gim, gy, CV_32F, kernel_trans);
-
-    float histo[depth][depth][depth] = {0};
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            int bin1 = std::max(1, int(ceil(depth * channel1.at<float>(i,j))));
-            int bin2 = std::max(1, int(ceil(depth * channel2.at<float>(i,j))));
-            int bin3 = std::max(1, int(ceil(depth * channel3.at<float>(i,j))));
-
-            float weight = abs(fx.at<float>(i,j) * gy.at<float>(i,j) - fy.at<float>(i,j) * gx.at<float>(i,j));
-            histo[bin1][bin2][bin3] = histo[bin1][bin2][bin3] + weight;
-        }
-    }
-    auto *histo_ptr = histo;
-    return histo_ptr;
-}
-
-void get_detection_centers(std::vector<BoundingBox> detections, unsigned int max_detections_per_frame) 
-{
-
-}
-
-void get_decriptors(std::vector<BoundingBox> detections)
-{
-
-}
-
-void get_net_cost_matrix() 
-{
-
-}
-
 int main(int argc, char **argv) {
     int segment_size = 0;
     std::string input_video;
@@ -284,18 +217,34 @@ int main(int argc, char **argv) {
             max_detections_per_frame = d.size();
     std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
 
-    // int segment_cnt = trimmed_video_frame_cnt / segment_size;
+    int segment_cnt = trimmed_video_frame_cnt / segment_size;
+    std::vector<Location> centers[trimmed_video_frame_cnt];
+    std::vector<cv::Mat> histograms[trimmed_video_frame_cnt];
     // // float histo[segment_cnt][segment_size][max_detections_per_frame] net_cost = {0}; // to zamienić na wektor
-    // // Location histo[segment_cnt][max_detections_per_frame][segment_size] centers = {};
-    // // float histo[segment_cnt][max_detections_per_frame][segment_size] descriptors = {0};
 
+    for (int i = 0; i < segment_cnt; i++) 
+    {
+        std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
+        int start_frame = segment_size * i;
+        for (int j = start_frame; j < start_frame + segment_size; j++)
+        {
+            std::cout << "Analyzing frame: " << j+1 << "/" << trimmed_video_frame_cnt << std::endl;
+            // for each detection in this frame
+            for(auto const& d : detections[j])
+            {
+                int x_min_root = d.x_min;
+                int y_min_root = d.y_min;
+                int x_max_root = d.x_max;
+                int y_max_root = d.y_max;
+                Location loc = {
+                    .x = (x_min_root + x_max_root) / 2,
+                    .y = (y_min_root + y_max_root) / 2
+                };
+                centers[j].push_back(loc);
+            }
+        }
 
-    // for (int i = 0; i < segment_cnt; i++) 
-    // {
-    //     std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
-    //     // for (j = )
-
-    // }
+    }
 
     clear_tmp(tmp_fixtures);
     return 0;
