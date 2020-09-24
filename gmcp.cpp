@@ -233,11 +233,13 @@ int main(int argc, char **argv) {
     int histSize[3] = {8, 8, 8};
     for (int i = 0; i < segment_cnt; i++) 
     {
-        std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
+        std::cout << "Analyzing detection centers and histograms for segment: " << i+1 
+                  << "/" << segment_cnt << std::endl;
         int start_frame = segment_size * i;
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
-            std::cout << "Analyzing frame: " << j+1 << "/" << trimmed_video_frame_cnt << std::endl;
+            std::cout << "Analyzing detection centers and histograms for frame: " << j+1 
+                      << "/" << trimmed_video_frame_cnt << std::endl;
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
             // for each detection in this frame
             for(auto const& d : detections[j])
@@ -256,6 +258,11 @@ int main(int argc, char **argv) {
                 cv::calcHist(&frame, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
                 histograms[j].push_back(hist);
             }
+        }
+
+        for (int j = 0; j < segment_size; j++)
+        {
+            ;
         }
     }
 
