@@ -226,6 +226,7 @@ int main(int argc, char **argv) {
     int segment_cnt = trimmed_video_frame_cnt / segment_size;
     std::vector<Location> centers[trimmed_video_frame_cnt];
     std::vector<cv::Mat> histograms[trimmed_video_frame_cnt];
+    std::vector<std::vector<double>> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt];
 
     int channels[3] = {0, 1, 2};
     float range[2] = {0, 256};
@@ -241,30 +242,73 @@ int main(int argc, char **argv) {
             std::cout << "Analyzing detection centers and histograms for frame: " << j+1 
                       << "/" << trimmed_video_frame_cnt << std::endl;
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
-            // for each detection in this frame
+
             for(auto const& d : detections[j])
             {
-                int x_min_root = d.x_min;
-                int y_min_root = d.y_min;
-                int x_max_root = d.x_max;
-                int y_max_root = d.y_max;
+                int width = d.x_max - d.x_min;
+                int height = d.y_max - d.y_min;
+                int x_center = (d.x_min + d.x_max) / 2;
+                int y_center = (d.y_min + d.y_max) / 2;
                 Location loc = {
-                    .x = (x_min_root + x_max_root) / 2,
-                    .y = (y_min_root + y_max_root) / 2
+                    .x = x_center,
+                    .y = y_center
                 };
                 centers[j].push_back(loc);
 
                 cv::Mat hist;
-                cv::calcHist(&frame, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
+                cv::Mat detection = frame(cv::Rect(x_center, y_center, width, height));
+                cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
                 histograms[j].push_back(hist);
             }
         }
-
-        for (int j = 0; j < segment_size; j++)
-        {
-            ;
-        }
     }
+
+    // for (int i = 0; i < trimmed_video_frame_cnt; i++) // która klatka
+    // {
+    //     for (int k = 0; k < histograms[i].size(); k++) // która detekcja
+    //     {
+    //         for (int j = 0; j < trimmed_video_frame_cnt; j++) // z którą klatką
+    //         {
+    //             for (int l = 0; l < histograms[j].size(); l++) // z którą detekcją
+    //             {
+    //                 std::cout << "Intersection: frame " << i << " detection " << k 
+    //                           << " frame " << j << " detection " << l << std::endl;
+    //                 double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
+    //                                                                        histograms[j][l], 
+    //                                                                        3); // CV_COMP_INTERSECT
+    //                 std::cout << histogram_intersection_kernel << std::endl;
+
+    //                 // trzeba najpierw wektor.reserve(tyle ile potrzeba), a potrzeba 
+    //                 // net_cost[i][j].push_back(histogram_intersection_kernel);
+    //             }
+    //         }
+    //     }
+    // }
+
+    // for (int i = 0; i < trimmed_video_frame_cnt; i++) // która klatka
+    // {
+    //     for (int j = 0; j < trimmed_video_frame_cnt; j++) // z którą klatką
+    //     {
+    //         net_cost[i][j].reserve(histograms[i].size());
+    //         for (int k = 0; k < histograms[i].size(); k++) // która detekcja
+    //         {
+    //             net_cost[i][j][k].reserve(histograms[j].size());
+    //             for (int l = 0; l < histograms[j].size(); l++) // z którą detekcją
+    //             {
+    //                 std::cout << "Intersection: frame " << i << " detection " << k 
+    //                           << " frame " << j << " detection " << l << std::endl;
+    //                 double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
+    //                                                                        histograms[j][l], 
+    //                                                                        3); // CV_COMP_INTERSECT
+    //                 std::cout << histogram_intersection_kernel << std::endl;
+
+    //                 // trzeba najpierw wektor.reserve(tyle ile potrzeba), a potrzeba 
+    //                 // net_cost[i][j].push_back(histogram_intersection_kernel);
+    //                 net_cost
+    //             }
+    //         }
+    //     }
+    // }
 
     clear_tmp(tmp_fixtures);
     return 0;
