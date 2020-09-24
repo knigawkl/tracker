@@ -26,9 +26,6 @@ def load_args():
     p.add_argument("--tmp_folder",
                     type=str,
                     help="tmp folder path")
-    p.add_argument("--segment_size",
-                    type=int,
-                    required=True)
     p.add_argument("--frame_cnt",
                     type=int,
                     required=True)
@@ -51,9 +48,9 @@ if __name__ == "__main__":
         detector = YOLODetector()
     detector_cfg = bios.read(args.cfg)[args.detector]
 
-    for x in range(0, int(args.frame_cnt), int(args.segment_size)):
-        logger.info(f"Performing detection on frame {x}")
-        video = imageio.get_reader(args.video, "ffmpeg")
+    video = imageio.get_reader(args.video, "ffmpeg")
+    for x in range(0, int(args.frame_cnt)):
+        logger.info(f"Performing detection on frame {x+1}/{args.frame_cnt}")
         image = video.get_data(x)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_path = f"{args.tmp_folder}/img/frame{x}.jpeg"

@@ -18,29 +18,37 @@
 #include <opencv2/opencv.hpp>
 
 
-int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment) {
+int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
+{
+    return cap.get(cv::CAP_PROP_FRAME_COUNT);
+}
+
+int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment) 
+{
     // calculates max length of video in frames if it has to be a multiple of frames_in_segment
-    int video_in_frame_cnt = cap.get(cv::CAP_PROP_FRAME_COUNT);
+    int video_in_frame_cnt = get_video_capture_frame_cnt(cap);
     std::cout << "Input video frames count: " << video_in_frame_cnt << std::endl;
     return video_in_frame_cnt / frames_in_segment * frames_in_segment;
 }
 
-void trim_video(std::string video_in, std::string video_out, int frame_cnt) {
+void trim_video(std::string video_in, std::string video_out, int frame_cnt) 
+{
     // trims video stored at video_in path to frame_cnt frames
     std::stringstream ss;
-    ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) << " -acodec copy -vcodec copy " << video_out << " -y";
+    ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) 
+       << " -acodec copy -vcodec copy " << video_out << " -y";
     std::string trim_command = ss.str();
     std::cout << "Executing: " << trim_command << std::endl;
     system(trim_command.c_str());
 }
 
-void detect(std::string detector, std::string detector_cfg, int segment_size, int frame_cnt, std::string video, std::string tmp_folder) {
+void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::string video, std::string tmp_folder) 
+{
     // initiates object detections on selected frames of the trimmed video
     // the detections are then stored in csv files
     std::stringstream ss;
     ss << "python3 ../detectors/detect.py --detector " << detector 
        << " --cfg " << detector_cfg
-       << " --segment_size " << std::to_string(segment_size) 
        << " --video " << video
        << " --tmp_folder " << tmp_folder
        << " --frame_cnt " << std::to_string(frame_cnt);
@@ -49,7 +57,8 @@ void detect(std::string detector, std::string detector_cfg, int segment_size, in
     system(detect_command.c_str());
 }
 
-std::vector<BoundingBox> load_detections(std::string csv_file) {
+std::vector<BoundingBox> load_detections(std::string csv_file) 
+{
     std::vector<BoundingBox> boxes;
     std::ifstream f(csv_file);
     std::string line, colname;
@@ -83,7 +92,8 @@ std::vector<BoundingBox> load_detections(std::string csv_file) {
     return boxes;
 }
 
-auto get_invariant_histogram(std::string img_path) {
+auto get_invariant_histogram(std::string img_path) 
+{
     constexpr int const depth = 32;
     cv::Mat img = cv::imread(img_path, cv::IMREAD_COLOR);
     cv::Mat normalized_img;
@@ -134,15 +144,20 @@ auto get_invariant_histogram(std::string img_path) {
     return histo_ptr;
 }
 
-void get_detection_centers(std::vector<BoundingBox> detections) {
-    
+void get_detection_centers(std::vector<BoundingBox> detections, unsigned int max_detections_per_frame) 
+{
+
 }
 
+void get_decriptors(std::vector<BoundingBox> detections)
+{
 
+}
 
-// void get_net_cost_matrix() {
+void get_net_cost_matrix() 
+{
 
-// }
+}
 
 int main(int argc, char **argv) {
     int segment_size = 0;
@@ -225,48 +240,64 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    printf("Segment size set to %d\n", segment_size);
-    printf("Input video path set to %s\n", input_video.c_str());
-    printf("Output video path set to %s\n", output_video.c_str());
-    printf("Detector set to %s\n", detector.c_str());
-    printf("Detector cfg path set to %s\n", detector_cfg.c_str());
-    printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
-
     make_tmp_dirs(tmp_fixtures);
-    std::string const trimmed_video = tmp_fixtures + "tmp.mp4";
+
+    {
+        printf("Segment size set to %d\n", segment_size);
+        printf("Input video path set to %s\n", input_video.c_str());
+        printf("Output video path set to %s\n", output_video.c_str());
+        printf("Detector set to %s\n", detector.c_str());
+        printf("Detector cfg path set to %s\n", detector_cfg.c_str());
+        printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
+    }
 
     cv::VideoCapture in_cap(input_video);
+    int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
     auto trimmed_video_frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
-    trim_video(input_video, trimmed_video, trimmed_video_frame_cnt);
-    std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
-
-    detect(detector, detector_cfg, segment_size, trimmed_video_frame_cnt, trimmed_video, tmp_fixtures);
-
-    int segment_cnt = trimmed_video_frame_cnt / segment_size;
-    std::vector<BoundingBox> detections[segment_cnt];
-    for (int i = 0; i < trimmed_video_frame_cnt; i += segment_size) 
+    std::string tmp_video = tmp_fixtures + "/input.mp4";
+    if (video_in_frame_cnt != trimmed_video_frame_cnt)
     {
-        std::cout << "Loading detections of frame " << i << std::endl;
-        std::stringstream ss;
-        ss << tmp_fixtures << "/csv/frame" << i << ".csv";
-        std::string csv_path = ss.str();
-        detections[i/segment_size] = load_detections(csv_path);
+        std::string const trimmed_video = tmp_fixtures + "/trim.mp4";
+        trim_video(input_video, trimmed_video, trimmed_video_frame_cnt);
+        std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
+        mv(trimmed_video, tmp_video);
+    }
+    else
+    {
+        cp(input_video, tmp_video);
     }
 
-    unsigned int max_detections_per_frame = 0;
-    for(auto const& d : detections)
-        if (d.size() > max_detections_per_frame)
-            max_detections_per_frame = d.size();
-    std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl; 
-    for (int i = 0; i < segment_cnt; i++) {
-        std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
-        get_detection_centers(detections[i]);
+    // detect(detector, detector_cfg, trimmed_video_frame_cnt, input_video, tmp_fixtures);
 
-        // get histo_root
-        
-        
-        // get net_cost_mat
-    }
+    
+    // std::vector<BoundingBox> detections[trimmed_video_frame_cnt];
+    // for (int i = 0; i < trimmed_video_frame_cnt; i += 1) 
+    // {
+    //     std::cout << "Loading detections of frame " << i << std::endl;
+    //     std::stringstream ss;
+    //     ss << tmp_fixtures << "/csv/frame" << i << ".csv";
+    //     std::string csv_path = ss.str();
+    //     detections[i] = load_detections(csv_path);
+    // }
+
+    // unsigned int max_detections_per_frame = 0;
+    // for(auto const& d : detections)
+    //     if (d.size() > max_detections_per_frame)
+    //         max_detections_per_frame = d.size();
+    // std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
+
+    // int segment_cnt = trimmed_video_frame_cnt / segment_size;
+    // // float histo[segment_cnt][segment_size][max_detections_per_frame] net_cost = {0}; // to zamienić na wektor
+    // // Location histo[segment_cnt][max_detections_per_frame][segment_size] centers = {};
+    // // float histo[segment_cnt][max_detections_per_frame][segment_size] descriptors = {0};
+
+
+    // for (int i = 0; i < segment_cnt; i++) 
+    // {
+    //     std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
+    //     // for (j = )
+
+    // }
 
     clear_tmp(tmp_fixtures);
     return 0;
