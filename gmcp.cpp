@@ -25,15 +25,21 @@ int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
 
 int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment) 
 {
-    // calculates max length of video in frames if it has to be a multiple of frames_in_segment
     int video_in_frame_cnt = get_video_capture_frame_cnt(cap);
     std::cout << "Input video frames count: " << video_in_frame_cnt << std::endl;
     return video_in_frame_cnt / frames_in_segment * frames_in_segment;
 }
 
+std::string get_frame_path(int frame, std::string tmp_folder)
+{
+    std::stringstream ss;
+    ss << tmp_folder << "/img/frame" << std::to_string(frame) << ".jpeg";
+    std::string path = ss.str();
+    return path;
+}
+
 void trim_video(std::string video_in, std::string video_out, int frame_cnt) 
 {
-    // trims video stored at video_in path to frame_cnt frames
     std::stringstream ss;
     ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) 
        << " -acodec copy -vcodec copy " << video_out << " -y";
@@ -220,8 +226,11 @@ int main(int argc, char **argv) {
     int segment_cnt = trimmed_video_frame_cnt / segment_size;
     std::vector<Location> centers[trimmed_video_frame_cnt];
     std::vector<cv::Mat> histograms[trimmed_video_frame_cnt];
-    // // float histo[segment_cnt][segment_size][max_detections_per_frame] net_cost = {0}; // to zamienić na wektor
 
+    int channels[3] = {0, 1, 2};
+    float range[2] = {0, 256};
+    const float * ranges[3] = {range, range, range};
+    int histSize[3] = {8, 8, 8};
     for (int i = 0; i < segment_cnt; i++) 
     {
         std::cout << "Analyzing segment: " << i+1 << "/" << segment_cnt << std::endl;
@@ -229,6 +238,7 @@ int main(int argc, char **argv) {
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
             std::cout << "Analyzing frame: " << j+1 << "/" << trimmed_video_frame_cnt << std::endl;
+            cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
             // for each detection in this frame
             for(auto const& d : detections[j])
             {
@@ -241,9 +251,12 @@ int main(int argc, char **argv) {
                     .y = (y_min_root + y_max_root) / 2
                 };
                 centers[j].push_back(loc);
+
+                cv::Mat hist;
+                cv::calcHist(&frame, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
+                histograms[j].push_back(hist);
             }
         }
-
     }
 
     clear_tmp(tmp_fixtures);
