@@ -24,17 +24,17 @@ void print_usage_info()
 {
     const char* usage_info =
     "\n    -s, --segment_size   frames in a segment\n"
-    "    -i, --input_video      input video path\n"
-    "    -o, --output_video     output video path\n"
+    "    -i, --in_video         input video path\n"
+    "    -o, --out_video        output video path\n"
     "    -d, --detector         object detector (ssd or yolo)\n"
     "    -c, --detector_cfg     path to detector cfg\n"
-    "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
+    "    -f, --tmp_folder       path to folder where temporary files will be stored\n"
     "    -h, --help             show this help msg";
     std::cout << usage_info << std::endl;
 }
 
-void get_parameters(int argc, char **argv, int& segment_size, std::string& input_video, std::string& output_video, 
-                    std::string& detector, std::string& detector_cfg, std::string& tmp_fixtures)
+void get_parameters(int argc, char **argv, int& segment_size, std::string& in_video, std::string& out_video, 
+                    std::string& detector, std::string& detector_cfg, std::string& tmp_folder)
 {
     int opt;
     while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
@@ -45,10 +45,10 @@ void get_parameters(int argc, char **argv, int& segment_size, std::string& input
                 segment_size = std::stoi(optarg);
                 break;
             case 'i':
-                input_video = optarg;
+                in_video = optarg;
                 break;
             case 'o':
-                output_video = optarg;
+                out_video = optarg;
                 break;
             case 'd':
                 detector = optarg;
@@ -57,7 +57,7 @@ void get_parameters(int argc, char **argv, int& segment_size, std::string& input
                 detector_cfg = optarg;
                 break;
             case 'f':
-                tmp_fixtures = optarg;
+                tmp_folder = optarg;
                 break;
             case 'h':
                 print_usage_info();
@@ -70,20 +70,20 @@ void get_parameters(int argc, char **argv, int& segment_size, std::string& input
     }
 }
 
-void verify_parameters(int segment_size, std::string input_video, std::string output_video, 
-                       std::string detector, std::string detector_cfg, std::string tmp_fixtures)
+void verify_parameters(int segment_size, std::string in_video, std::string out_video, 
+                       std::string detector, std::string detector_cfg, std::string tmp_folder)
 {
     if (segment_size == 0)
     {
         std::cout << "Please specify segment size. Aborting.";
         exit(0);
     }
-    if (input_video == "")
+    if (in_video == "")
     {
         std::cout << "Please specify input video path. Aborting.";
         exit(0);
     }
-    if (output_video == "")
+    if (out_video == "")
     {
         std::cout << "Please specify output video path. Aborting.";
         exit(0);
@@ -98,22 +98,22 @@ void verify_parameters(int segment_size, std::string input_video, std::string ou
         std::cout << "Please specify detector config path. Aborting.";
         exit(0);
     }
-    if (tmp_fixtures == "")
+    if (tmp_folder == "")
     {
         std::cout << "Please specify path where tmp files should be stored. Aborting.";
         exit(0);
     }
 }
 
-void print_parameters(int segment_size, std::string input_video, std::string output_video, 
-                      std::string detector, std::string detector_cfg, std::string tmp_fixtures)
+void print_parameters(int segment_size, std::string in_video, std::string out_video, 
+                      std::string detector, std::string detector_cfg, std::string tmp_folder)
 {
     printf("Segment size set to %d\n", segment_size);
-    printf("Input video path set to %s\n", input_video.c_str());
-    printf("Output video path set to %s\n", output_video.c_str());
+    printf("Input video path set to %s\n", in_video.c_str());
+    printf("Output video path set to %s\n", out_video.c_str());
     printf("Detector set to %s\n", detector.c_str());
     printf("Detector cfg path set to %s\n", detector_cfg.c_str());
-    printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
+    printf("Temporary files will be stored in %s\n", tmp_folder.c_str());
 }
 
 void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
@@ -229,7 +229,7 @@ unsigned int get_max_detections_per_frame(const std::vector<std::vector<Bounding
 
 auto get_detection_centers_and_histograms(const std::vector<std::vector<BoundingBox>> &detections,
                                           int frame_cnt, int segment_cnt, int segment_size,
-                                          const std::string &tmp_fixtures)
+                                          const std::string &tmp_folder)
 {
     std::vector<std::vector<Location>> centers(frame_cnt, std::vector<Location>());
     std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>());
@@ -242,7 +242,7 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
         int start_frame = segment_size * i;
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
-            cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
+            cv::Mat frame = cv::imread(get_frame_path(j, tmp_folder));
             for(auto const& d : detections[j])
             {
                 int width = d.x_max - d.x_min;
@@ -265,53 +265,59 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
     return std::make_pair(centers, histograms);
 }
 
+auto get_net_cost()
+{
+    ;
+
+}
+
 void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
-                       std::string tmp_folder, std::string input_video, std::string tmp_video)
+                       std::string tmp_folder, std::string in_video, std::string tmp_video)
 {
     const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
     if (video_in_frame_cnt != desired_frame_cnt)
     {
         std::string const trimmed_video = tmp_folder + "/trim.mp4";
-        trim_video(input_video, trimmed_video, desired_frame_cnt);
+        trim_video(in_video, trimmed_video, desired_frame_cnt);
         std::cout << "Input video frames count cut to: " << desired_frame_cnt << std::endl;
         mv(trimmed_video, tmp_video);
     }
     else
     {
-        cp(input_video, tmp_video);
+        cp(in_video, tmp_video);
     }
 }
 
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
-    std::string input_video, output_video, detector, detector_cfg, tmp_fixtures;
+    std::string in_video, out_video, detector, detector_cfg, tmp_folder;
     
-    get_parameters(argc, argv, segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
-    verify_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
-    print_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
-    make_tmp_dirs(tmp_fixtures);
+    get_parameters(argc, argv, segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
+    verify_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
+    print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
+    make_tmp_dirs(tmp_folder);
 
-    cv::VideoCapture in_cap(input_video);
+    cv::VideoCapture in_cap(in_video);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
     const int segment_cnt = frame_cnt / segment_size;
-    const std::string tmp_video = tmp_fixtures + "/input.mp4";
-    prepare_tmp_video(in_cap, frame_cnt, tmp_fixtures, input_video, tmp_video);
+    const std::string tmp_video = tmp_folder + "/input.mp4";
+    prepare_tmp_video(in_cap, frame_cnt, tmp_folder, in_video, tmp_video);
 
-    detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_fixtures);
-    auto detections = load_detections(frame_cnt, tmp_fixtures);
+    detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
+    auto detections = load_detections(frame_cnt, tmp_folder);
     auto max_detections_per_frame = get_max_detections_per_frame(detections);
     auto colors = get_colors(max_detections_per_frame);
     
     auto cah = get_detection_centers_and_histograms(detections, 
                                                     frame_cnt, 
                                                     segment_cnt, segment_size,
-                                                    tmp_fixtures);
+                                                    tmp_folder);
     auto centers = cah.first;
     auto histograms = cah.second;
-    std::vector<HistInterKernel> net_cost[frame_cnt][frame_cnt];
-    
-    // std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt]; = get_net_cost();
+
+    std::vector<std::vector<std::vector<HistInterKernel>>> net_cost(frame_cnt, std::vector<std::vector<HistInterKernel>>(frame_cnt, std::vector<HistInterKernel>()));
+    // auto net_cost = get_net_cost();
     for (int i = 0; i < frame_cnt; i++)
         for (int k = 0; k < histograms[i].size(); k++)
             for (int j = 0; j < frame_cnt; j++)
@@ -340,7 +346,7 @@ int main(int argc, char **argv) {
     //     }
     // }
 
-    clear_tmp(tmp_fixtures);
+    clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     return 0;
