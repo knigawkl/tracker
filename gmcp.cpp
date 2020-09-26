@@ -28,7 +28,6 @@ void print_usage_info()
     "    -d, --detector         object detector (ssd or yolo)\n"
     "    -c, --detector_cfg     path to detector cfg\n"
     "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
-    "    -m, --max_people       max number of detections per frame to be considered\n"
     "    -h, --help             show this help msg";
     std::cout << usage_info << std::endl;
 }
@@ -159,10 +158,20 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
+std::vector<Color> get_colors(int vec_len)
+{    
+    std::vector<Color> colors;
+    colors.reserve(vec_len);
+    for (int i = 0; i < vec_len; i++)
+    {
+        colors.push_back(Color());
+    }
+    return colors;
+}
+
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;
-    int max_people_per_frame = 100;
     std::string input_video;
     std::string output_video;
     std::string detector;
@@ -191,9 +200,6 @@ int main(int argc, char **argv) {
                 break;
             case 'f':
                 tmp_fixtures = optarg;
-                break;
-            case 'm':
-                max_people_per_frame = std::stoi(optarg);
                 break;
             case 'h':
                 print_usage_info();
@@ -298,10 +304,16 @@ int main(int argc, char **argv) {
                     net_cost[i][j].push_back(hik);
                 }
 
-    for (int i = 0; i < segment_cnt; i++)
-    {
-        // track(centers);
-    }
+    std::vector<Color> colors = get_colors(max_detections_per_frame);
+
+    // for (int i = 0; i < segment_cnt; i++)
+    // {
+    //     int j = 0;
+    //     while (j < max_detections_per_frame)
+    //     {
+    //         ;
+    //     }
+    // }
 
     clear_tmp(tmp_fixtures);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
