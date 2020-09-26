@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <algorithm> 
+#include <chrono>
 
 #include "gmcp.hpp"
 #include "utils.hpp"
@@ -98,8 +99,15 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
+void track()
+{
+    ;
+}
+
 int main(int argc, char **argv) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;
+    int max_people_per_frame = 30;
     std::string input_video;
     std::string output_video;
     std::string detector;
@@ -113,6 +121,7 @@ int main(int argc, char **argv) {
     "    -d, --detector         object detector (ssd or yolo)\n"
     "    -c, --detector_cfg     path to detector cfg\n"
     "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
+    "    -m, --max_people       max number of detections per frame to be considered\n"
     "    -h, --help             show this help msg";
 
     int opt;
@@ -137,6 +146,9 @@ int main(int argc, char **argv) {
                 break;
             case 'f':
                 tmp_fixtures = optarg;
+                break;
+            case 'm':
+                max_people_per_frame = std::stoi(optarg);
                 break;
             case 'h':
                 std::cout << "Please provide the following arguments:\n" << usage_info << std::endl;
@@ -279,6 +291,16 @@ int main(int argc, char **argv) {
                     net_cost[i][j].push_back(hik);
                 }
 
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        track();
+    }
+
+
     clear_tmp(tmp_fixtures);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Exec time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
+              << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
+              << "[s])" << std::endl;
     return 0;
 }
