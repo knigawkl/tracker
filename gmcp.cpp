@@ -189,17 +189,6 @@ unsigned int get_max_detections_per_frame(const std::vector<std::vector<Bounding
     return maxi;
 }
 
-std::vector<Color> get_colors(int vec_len) // mv to util
-{    
-    std::vector<Color> colors;
-    colors.reserve(vec_len);
-    for (int i = 0; i < vec_len; i++)
-    {
-        colors.push_back(Color());
-    }
-    return colors;
-}
-
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;

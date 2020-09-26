@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <vector>
 
 void make_tmp_dirs(std::string tmp_folder);
 
@@ -20,3 +21,5 @@ struct Color
         b = rand() % 256;
     }
 };
+
+std::vector<Color> get_colors(int vec_len);

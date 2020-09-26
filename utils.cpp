@@ -38,3 +38,14 @@ void cp(std::string what, std::string where)
     std::cout << "Executing: " << cp_command << std::endl;
     system(cp_command.c_str());
 }
+
+std::vector<Color> get_colors(int vec_len)
+{    
+    std::vector<Color> colors;
+    colors.reserve(vec_len);
+    for (int i = 0; i < vec_len; i++)
+    {
+        colors.push_back(Color());
+    }
+    return colors;
+}
