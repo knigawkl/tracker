@@ -283,7 +283,7 @@ void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt,
 }
 
 int main(int argc, char **argv) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
     std::string input_video, output_video, detector, detector_cfg, tmp_fixtures;
     
@@ -301,13 +301,14 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_fixtures);
     auto detections = load_detections(frame_cnt, tmp_fixtures);
     auto max_detections_per_frame = get_max_detections_per_frame(detections);
+    auto colors = get_colors(max_detections_per_frame);
     
     auto cah = get_detection_centers_and_histograms(detections, 
                                                     frame_cnt, 
                                                     segment_cnt, segment_size,
                                                     tmp_fixtures);
-    std::vector<std::vector<Location>> centers = cah.first;
-    std::vector<std::vector<cv::Mat>> histograms = cah.second;
+    auto centers = cah.first;
+    auto histograms = cah.second;
     std::vector<HistInterKernel> net_cost[frame_cnt][frame_cnt];
     
     // std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt]; = get_net_cost();
@@ -327,8 +328,6 @@ int main(int argc, char **argv) {
                     net_cost[i][j].push_back(hik);
                 }
 
-    std::vector<Color> colors = get_colors(max_detections_per_frame);
-
     // for (int i = 0; i < segment_cnt; i++)
     // {
     //     int j = 0;
@@ -342,7 +341,7 @@ int main(int argc, char **argv) {
     // }
 
     clear_tmp(tmp_fixtures);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     return 0;
 }
