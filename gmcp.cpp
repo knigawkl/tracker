@@ -78,6 +78,13 @@ void print_parameters(int segment_size, std::string input_video, std::string out
     printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
 }
 
+void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
+{
+    std::cout << "Exec time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
+            << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
+            << "[s])" << std::endl;
+}
+
 int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
 {
     return cap.get(cv::CAP_PROP_FRAME_COUNT);
@@ -249,8 +256,8 @@ int main(int argc, char **argv) {
     std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
 
     const int segment_cnt = trimmed_video_frame_cnt / segment_size;
-    std::vector<Location> centers[trimmed_video_frame_cnt];
-    std::vector<cv::Mat> histograms[trimmed_video_frame_cnt];
+    std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); 
+    std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>());
     std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt];
 
     constexpr int channels[3] = {0, 1, 2};
@@ -311,14 +318,15 @@ int main(int argc, char **argv) {
     //     int j = 0;
     //     while (j < max_detections_per_frame)
     //     {
+    //         // once a pedestrian is tracked, take corresponding detections out of net_cost matrix
+    //         // remove_done_frames można zrobić na końcu tej pętli
+             
     //         ;
     //     }
     // }
 
     clear_tmp(tmp_fixtures);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Exec time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
-              << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
-              << "[s])" << std::endl;
+    print_exec_time(begin, end);
     return 0;
 }
