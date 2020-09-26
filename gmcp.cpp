@@ -175,8 +175,6 @@ std::vector<BoundingBox> load_frame_detections(std::string csv_file)
     std::string line, colname;
     int val;
 
-    std::cout << "Loading detections from " << csv_file << std::endl;
-
     if(!f.is_open()) 
          throw std::runtime_error("Could not open file");
 
@@ -265,10 +263,28 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
     return std::make_pair(centers, histograms);
 }
 
-auto get_net_cost()
-{
-    ;
-
+auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
+{  
+    using namespace std;
+    vector<vector<vector<HistInterKernel>>> net_cost(frame_cnt, 
+                                                     vector<vector<HistInterKernel>>(frame_cnt, 
+                                                                                     vector<HistInterKernel>()));
+    for (int i = 0; i < frame_cnt; i++)
+        for (int k = 0; k < histograms[i].size(); k++)
+            for (int j = 0; j < frame_cnt; j++)
+                for (int l = 0; l < histograms[j].size(); l++)
+                {
+                    double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
+                                                                           histograms[j][l], 
+                                                                           3); // CV_COMP_INTERSECT
+                    HistInterKernel hik = {
+                        .detection_idx1 = k,
+                        .detection_idx2 = l,
+                        .value = histogram_intersection_kernel
+                    };
+                    net_cost[i][j].push_back(hik);
+                }
+    return net_cost;
 }
 
 void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
@@ -315,24 +331,7 @@ int main(int argc, char **argv) {
                                                     tmp_folder);
     auto centers = cah.first;
     auto histograms = cah.second;
-
-    std::vector<std::vector<std::vector<HistInterKernel>>> net_cost(frame_cnt, std::vector<std::vector<HistInterKernel>>(frame_cnt, std::vector<HistInterKernel>()));
-    // auto net_cost = get_net_cost();
-    for (int i = 0; i < frame_cnt; i++)
-        for (int k = 0; k < histograms[i].size(); k++)
-            for (int j = 0; j < frame_cnt; j++)
-                for (int l = 0; l < histograms[j].size(); l++)
-                {
-                    double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
-                                                                           histograms[j][l], 
-                                                                           3); // CV_COMP_INTERSECT
-                    HistInterKernel hik = {
-                        .detection_idx1 = k,
-                        .detection_idx2 = l,
-                        .value = histogram_intersection_kernel
-                    };
-                    net_cost[i][j].push_back(hik);
-                }
+    auto net_cost = get_net_cost(frame_cnt, histograms);
 
     // for (int i = 0; i < segment_cnt; i++)
     // {
