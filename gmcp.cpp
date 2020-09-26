@@ -179,6 +179,16 @@ std::vector<std::vector<BoundingBox>> load_detections(int frame_cnt, std::string
     return detections;
 }
 
+unsigned int get_max_detections_per_frame(const std::vector<std::vector<BoundingBox>> &detections)
+{
+    unsigned int maxi = 0;
+    for(auto const& d : detections)
+        if (d.size() > maxi)
+            maxi = d.size();
+    std::cout << "Max number of detections per frame is: " << maxi << std::endl;
+    return maxi;
+}
+
 std::vector<Color> get_colors(int vec_len) // mv to util
 {    
     std::vector<Color> colors;
@@ -254,13 +264,7 @@ int main(int argc, char **argv) {
 
     detect(detector, detector_cfg, trimmed_video_frame_cnt - 1, tmp_video, tmp_fixtures);
     auto detections = load_detections(trimmed_video_frame_cnt, tmp_fixtures);
-
-    // unsigned int max_detections_per_frame = get_max_detections_per_frame()
-    unsigned int max_detections_per_frame = 0;
-    for(auto const& d : detections)
-        if (d.size() > max_detections_per_frame)
-            max_detections_per_frame = d.size();
-    std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
+    unsigned int max_detections_per_frame = get_max_detections_per_frame(detections);
 
     const int segment_cnt = trimmed_video_frame_cnt / segment_size;
     std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); 
