@@ -206,7 +206,6 @@ std::vector<std::vector<BoundingBox>> load_detections(int frame_cnt, std::string
     std::vector<std::vector<BoundingBox>> detections(frame_cnt, std::vector<BoundingBox>());
     for (int i = 0; i < frame_cnt; i += 1) 
     {
-        std::cout << "Loading detections of frame " << i << std::endl;
         std::stringstream ss;
         ss << tmp_folder << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();

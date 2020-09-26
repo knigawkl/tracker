@@ -68,4 +68,3 @@ if __name__ == "__main__":
             frame_num=x+1)
             image_path = f"{args.tmp_folder}/img/frame{x+1}.jpeg"
             cv2.imwrite(image_path, image)
-
