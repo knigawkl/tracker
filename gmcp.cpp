@@ -32,6 +32,43 @@ void print_usage_info()
     std::cout << usage_info << std::endl;
 }
 
+void get_parameters(int argc, char **argv, int& segment_size, std::string& input_video, std::string& output_video, 
+                    std::string& detector, std::string& detector_cfg, std::string& tmp_fixtures)
+{
+    int opt;
+    while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
+    {
+        switch (opt)
+        {
+            case 's':
+                segment_size = std::stoi(optarg);
+                break;
+            case 'i':
+                input_video = optarg;
+                break;
+            case 'o':
+                output_video = optarg;
+                break;
+            case 'd':
+                detector = optarg;
+                break;
+            case 'c':
+                detector_cfg = optarg;
+                break;
+            case 'f':
+                tmp_fixtures = optarg;
+                break;
+            case 'h':
+                print_usage_info();
+                exit(0);
+            default:
+                std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
+                print_usage_info();
+                abort();
+        }
+    }
+}
+
 void verify_parameters(int segment_size, std::string input_video, std::string output_video, 
                        std::string detector, std::string detector_cfg, std::string tmp_fixtures)
 {
@@ -197,40 +234,8 @@ int main(int argc, char **argv) {
     std::string detector;
     std::string detector_cfg;
     std::string tmp_fixtures;
-
-    int opt;
-    while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
-    {
-        switch (opt)
-        {
-            case 's':
-                segment_size = std::stoi(optarg);
-                break;
-            case 'i':
-                input_video = optarg;
-                break;
-            case 'o':
-                output_video = optarg;
-                break;
-            case 'd':
-                detector = optarg;
-                break;
-            case 'c':
-                detector_cfg = optarg;
-                break;
-            case 'f':
-                tmp_fixtures = optarg;
-                break;
-            case 'h':
-                print_usage_info();
-                exit(0);
-            default:
-                std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
-                print_usage_info();
-                abort();
-        }
-    }
-
+    
+    get_parameters(argc, argv, segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
     verify_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
     print_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
     make_tmp_dirs(tmp_fixtures);
