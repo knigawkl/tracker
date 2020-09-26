@@ -12,6 +12,7 @@
 #include <cmath>
 #include <algorithm> 
 #include <chrono>
+#include <utility>
 
 #include "gmcp.hpp"
 #include "utils.hpp"
@@ -226,6 +227,44 @@ unsigned int get_max_detections_per_frame(const std::vector<std::vector<Bounding
     return maxi;
 }
 
+auto get_detection_centers_and_histograms(const std::vector<std::vector<BoundingBox>> &detections,
+                                          int frame_cnt, int segment_cnt, int segment_size,
+                                          const std::string &tmp_fixtures)
+{
+    std::vector<std::vector<Location>> centers(frame_cnt, std::vector<Location>());
+    std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>());
+    constexpr int channels[3] = {0, 1, 2};
+    constexpr float range[2] = {0, 256};
+    const float * ranges[3] = {range, range, range};
+    constexpr int histSize[3] = {8, 8, 8};
+    for (int i = 0; i < segment_cnt; i++) 
+    {
+        int start_frame = segment_size * i;
+        for (int j = start_frame; j < start_frame + segment_size; j++)
+        {
+            cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
+            for(auto const& d : detections[j])
+            {
+                int width = d.x_max - d.x_min;
+                int height = d.y_max - d.y_min;
+                int x_center = (d.x_min + d.x_max) / 2;
+                int y_center = (d.y_min + d.y_max) / 2;
+                Location loc = {
+                    .x = x_center,
+                    .y = y_center
+                };
+                centers[j].push_back(loc);
+                
+                cv::Mat hist;
+                cv::Mat detection = frame(cv::Rect(x_center, y_center, width, height));
+                cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
+                histograms[j].push_back(hist);
+            }
+        }
+    }
+    return std::make_pair(centers, histograms);
+}
+
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -243,6 +282,7 @@ int main(int argc, char **argv) {
     cv::VideoCapture in_cap(input_video);
     const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
+    const int segment_cnt = frame_cnt / segment_size;
     const std::string tmp_video = tmp_fixtures + "/input.mp4";
     if (video_in_frame_cnt != frame_cnt)
     {
@@ -259,48 +299,14 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_fixtures);
     auto detections = load_detections(frame_cnt, tmp_fixtures);
     auto max_detections_per_frame = get_max_detections_per_frame(detections);
-
-    const int segment_cnt = frame_cnt / segment_size;
-    std::vector<std::vector<Location>> centers(frame_cnt, std::vector<Location>()); 
-    std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>());
+    
+    auto cah = get_detection_centers_and_histograms(detections, 
+                                                    frame_cnt, 
+                                                    segment_cnt, segment_size,
+                                                    tmp_fixtures);
+    std::vector<std::vector<Location>> centers = cah.first;
+    std::vector<std::vector<cv::Mat>> histograms = cah.second;
     std::vector<HistInterKernel> net_cost[frame_cnt][frame_cnt];
-
-    // std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); = get_detection_centers()
-    // std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>()); = get_detection_histograms()
-    constexpr int channels[3] = {0, 1, 2};
-    constexpr float range[2] = {0, 256};
-    const float * ranges[3] = {range, range, range};
-    constexpr int histSize[3] = {8, 8, 8};
-    for (int i = 0; i < segment_cnt; i++) 
-    {
-        std::cout << "Analyzing detection centers and histograms for segment: " << i+1 
-                  << "/" << segment_cnt << std::endl;
-        int start_frame = segment_size * i;
-        for (int j = start_frame; j < start_frame + segment_size; j++)
-        {
-            std::cout << "Analyzing detection centers and histograms for frame: " << j+1 
-                      << "/" << frame_cnt << std::endl;
-            cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
-
-            for(auto const& d : detections[j])
-            {
-                int width = d.x_max - d.x_min;
-                int height = d.y_max - d.y_min;
-                int x_center = (d.x_min + d.x_max) / 2;
-                int y_center = (d.y_min + d.y_max) / 2;
-                Location loc = {
-                    .x = x_center,
-                    .y = y_center
-                };
-                centers[j].push_back(loc);
-
-                cv::Mat hist;
-                cv::Mat detection = frame(cv::Rect(x_center, y_center, width, height));
-                cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
-                histograms[j].push_back(hist);
-            }
-        }
-    }
     
     // std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt]; = get_net_cost();
     for (int i = 0; i < frame_cnt; i++)
