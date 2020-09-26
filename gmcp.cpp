@@ -99,10 +99,10 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
-void track()
-{
-    ;
-}
+// void track(const &)
+// {
+//     ;
+// }
 
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -203,9 +203,9 @@ int main(int argc, char **argv) {
     }
 
     cv::VideoCapture in_cap(input_video);
-    int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
-    auto trimmed_video_frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
-    std::string tmp_video = tmp_fixtures + "/input.mp4";
+    const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
+    const int trimmed_video_frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
+    const std::string tmp_video = tmp_fixtures + "/input.mp4";
     if (video_in_frame_cnt != trimmed_video_frame_cnt)
     {
         std::string const trimmed_video = tmp_fixtures + "/trim.mp4";
@@ -235,15 +235,15 @@ int main(int argc, char **argv) {
             max_detections_per_frame = d.size();
     std::cout << "Max number of detections per frame is: " << max_detections_per_frame << std::endl;
 
-    int segment_cnt = trimmed_video_frame_cnt / segment_size;
+    const int segment_cnt = trimmed_video_frame_cnt / segment_size;
     std::vector<Location> centers[trimmed_video_frame_cnt];
     std::vector<cv::Mat> histograms[trimmed_video_frame_cnt];
     std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt];
 
-    int channels[3] = {0, 1, 2};
-    float range[2] = {0, 256};
+    constexpr int channels[3] = {0, 1, 2};
+    constexpr float range[2] = {0, 256};
     const float * ranges[3] = {range, range, range};
-    int histSize[3] = {8, 8, 8};
+    constexpr int histSize[3] = {8, 8, 8};
     for (int i = 0; i < segment_cnt; i++) 
     {
         std::cout << "Analyzing detection centers and histograms for segment: " << i+1 
@@ -293,9 +293,8 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < segment_cnt; i++)
     {
-        track();
+        // track(centers);
     }
-
 
     clear_tmp(tmp_fixtures);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
