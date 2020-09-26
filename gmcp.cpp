@@ -237,13 +237,13 @@ int main(int argc, char **argv) {
 
     cv::VideoCapture in_cap(input_video);
     const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
-    const int trimmed_video_frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
+    const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
     const std::string tmp_video = tmp_fixtures + "/input.mp4";
-    if (video_in_frame_cnt != trimmed_video_frame_cnt)
+    if (video_in_frame_cnt != frame_cnt)
     {
         std::string const trimmed_video = tmp_fixtures + "/trim.mp4";
-        trim_video(input_video, trimmed_video, trimmed_video_frame_cnt);
-        std::cout << "Input video frames count cut to: " << trimmed_video_frame_cnt << std::endl;
+        trim_video(input_video, trimmed_video, frame_cnt);
+        std::cout << "Input video frames count cut to: " << frame_cnt << std::endl;
         mv(trimmed_video, tmp_video);
     }
     else
@@ -251,14 +251,14 @@ int main(int argc, char **argv) {
         cp(input_video, tmp_video);
     }
 
-    detect(detector, detector_cfg, trimmed_video_frame_cnt - 1, tmp_video, tmp_fixtures);
-    auto detections = load_detections(trimmed_video_frame_cnt, tmp_fixtures);
-    unsigned int max_detections_per_frame = get_max_detections_per_frame(detections);
+    detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_fixtures);
+    auto detections = load_detections(frame_cnt, tmp_fixtures);
+    auto max_detections_per_frame = get_max_detections_per_frame(detections);
 
-    const int segment_cnt = trimmed_video_frame_cnt / segment_size;
-    std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); 
-    std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>());
-    std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt];
+    const int segment_cnt = frame_cnt / segment_size;
+    std::vector<std::vector<Location>> centers(frame_cnt, std::vector<Location>()); 
+    std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>());
+    std::vector<HistInterKernel> net_cost[frame_cnt][frame_cnt];
 
     // std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); = get_detection_centers()
     // std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>()); = get_detection_histograms()
@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
             std::cout << "Analyzing detection centers and histograms for frame: " << j+1 
-                      << "/" << trimmed_video_frame_cnt << std::endl;
+                      << "/" << frame_cnt << std::endl;
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_fixtures));
 
             for(auto const& d : detections[j])
@@ -298,9 +298,9 @@ int main(int argc, char **argv) {
     }
     
     // std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt]; = get_net_cost();
-    for (int i = 0; i < trimmed_video_frame_cnt; i++)
+    for (int i = 0; i < frame_cnt; i++)
         for (int k = 0; k < histograms[i].size(); k++)
-            for (int j = 0; j < trimmed_video_frame_cnt; j++)
+            for (int j = 0; j < frame_cnt; j++)
                 for (int l = 0; l < histograms[j].size(); l++)
                 {
                     double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
