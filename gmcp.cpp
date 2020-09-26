@@ -19,6 +19,66 @@
 #include <opencv2/opencv.hpp>
 
 
+void print_usage_info()
+{
+    const char* usage_info =
+    "\n    -s, --segment_size   frames in a segment\n"
+    "    -i, --input_video      input video path\n"
+    "    -o, --output_video     output video path\n"
+    "    -d, --detector         object detector (ssd or yolo)\n"
+    "    -c, --detector_cfg     path to detector cfg\n"
+    "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
+    "    -m, --max_people       max number of detections per frame to be considered\n"
+    "    -h, --help             show this help msg";
+    std::cout << usage_info << std::endl;
+}
+
+void verify_parameters(int segment_size, std::string input_video, std::string output_video, 
+                       std::string detector, std::string detector_cfg, std::string tmp_fixtures)
+{
+    if (segment_size == 0)
+    {
+        std::cout << "Please specify segment size. Aborting.";
+        exit(0);
+    }
+    if (input_video == "")
+    {
+        std::cout << "Please specify input video path. Aborting.";
+        exit(0);
+    }
+    if (output_video == "")
+    {
+        std::cout << "Please specify output video path. Aborting.";
+        exit(0);
+    }
+    if (detector != "yolo" && detector != "ssd")
+    {
+        std::cout << "Unsupported detector. Aborting.";
+        exit(0);
+    }
+    if (detector_cfg == "")
+    {
+        std::cout << "Please specify detector config path. Aborting.";
+        exit(0);
+    }
+    if (tmp_fixtures == "")
+    {
+        std::cout << "Please specify path where tmp files should be stored. Aborting.";
+        exit(0);
+    }
+}
+
+void print_parameters(int segment_size, std::string input_video, std::string output_video, 
+                      std::string detector, std::string detector_cfg, std::string tmp_fixtures)
+{
+    printf("Segment size set to %d\n", segment_size);
+    printf("Input video path set to %s\n", input_video.c_str());
+    printf("Output video path set to %s\n", output_video.c_str());
+    printf("Detector set to %s\n", detector.c_str());
+    printf("Detector cfg path set to %s\n", detector_cfg.c_str());
+    printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
+}
+
 int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
 {
     return cap.get(cv::CAP_PROP_FRAME_COUNT);
@@ -99,30 +159,15 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
-// void track(const &)
-// {
-//     ;
-// }
-
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;
-    int max_people_per_frame = 30;
+    int max_people_per_frame = 100;
     std::string input_video;
     std::string output_video;
     std::string detector;
     std::string detector_cfg;
     std::string tmp_fixtures;
-
-    const char* usage_info =
-    "\n    -s, --segment_size   frames in a segment\n"
-    "    -i, --input_video      input video path\n"
-    "    -o, --output_video     output video path\n"
-    "    -d, --detector         object detector (ssd or yolo)\n"
-    "    -c, --detector_cfg     path to detector cfg\n"
-    "    -f, --tmp_fixtures     path to folder where temporary files will be stored\n"
-    "    -m, --max_people       max number of detections per frame to be considered\n"
-    "    -h, --help             show this help msg";
 
     int opt;
     while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
@@ -151,56 +196,18 @@ int main(int argc, char **argv) {
                 max_people_per_frame = std::stoi(optarg);
                 break;
             case 'h':
-                std::cout << "Please provide the following arguments:\n" << usage_info << std::endl;
+                print_usage_info();
                 exit(0);
             default:
                 std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
-                std::cout << usage_info << std::endl;
+                print_usage_info();
                 abort();
         }
     }
 
-    if (segment_size == 0)
-    {
-        std::cout << "Please specify segment size. Aborting.";
-        exit(0);
-    }
-    if (input_video == "")
-    {
-        std::cout << "Please specify input video path. Aborting.";
-        exit(0);
-    }
-    if (output_video == "")
-    {
-        std::cout << "Please specify output video path. Aborting.";
-        exit(0);
-    }
-    if (detector != "yolo" && detector != "ssd")
-    {
-        std::cout << "Unsupported detector. Aborting.";
-        exit(0);
-    }
-    if (detector_cfg == "")
-    {
-        std::cout << "Please specify detector config path. Aborting.";
-        exit(0);
-    }
-    if (tmp_fixtures == "")
-    {
-        std::cout << "Please specify path where tmp files should be stored. Aborting.";
-        exit(0);
-    }
-
+    verify_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
+    print_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
     make_tmp_dirs(tmp_fixtures);
-
-    {
-        printf("Segment size set to %d\n", segment_size);
-        printf("Input video path set to %s\n", input_video.c_str());
-        printf("Output video path set to %s\n", output_video.c_str());
-        printf("Detector set to %s\n", detector.c_str());
-        printf("Detector cfg path set to %s\n", detector_cfg.c_str());
-        printf("Temporary files will be stored in %s\n", tmp_fixtures.c_str());
-    }
 
     cv::VideoCapture in_cap(input_video);
     const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
