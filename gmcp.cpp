@@ -265,14 +265,27 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
     return std::make_pair(centers, histograms);
 }
 
+void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
+                       std::string tmp_folder, std::string input_video, std::string tmp_video)
+{
+    const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
+    if (video_in_frame_cnt != desired_frame_cnt)
+    {
+        std::string const trimmed_video = tmp_folder + "/trim.mp4";
+        trim_video(input_video, trimmed_video, desired_frame_cnt);
+        std::cout << "Input video frames count cut to: " << desired_frame_cnt << std::endl;
+        mv(trimmed_video, tmp_video);
+    }
+    else
+    {
+        cp(input_video, tmp_video);
+    }
+}
+
 int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int segment_size = 0;
-    std::string input_video;
-    std::string output_video;
-    std::string detector;
-    std::string detector_cfg;
-    std::string tmp_fixtures;
+    std::string input_video, output_video, detector, detector_cfg, tmp_fixtures;
     
     get_parameters(argc, argv, segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
     verify_parameters(segment_size, input_video, output_video, detector, detector_cfg, tmp_fixtures);
@@ -280,21 +293,10 @@ int main(int argc, char **argv) {
     make_tmp_dirs(tmp_fixtures);
 
     cv::VideoCapture in_cap(input_video);
-    const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
     const int segment_cnt = frame_cnt / segment_size;
     const std::string tmp_video = tmp_fixtures + "/input.mp4";
-    if (video_in_frame_cnt != frame_cnt)
-    {
-        std::string const trimmed_video = tmp_fixtures + "/trim.mp4";
-        trim_video(input_video, trimmed_video, frame_cnt);
-        std::cout << "Input video frames count cut to: " << frame_cnt << std::endl;
-        mv(trimmed_video, tmp_video);
-    }
-    else
-    {
-        cp(input_video, tmp_video);
-    }
+    prepare_tmp_video(in_cap, frame_cnt, tmp_fixtures, input_video, tmp_video);
 
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_fixtures);
     auto detections = load_detections(frame_cnt, tmp_fixtures);
