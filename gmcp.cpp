@@ -130,7 +130,7 @@ void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::
     system(detect_command.c_str());
 }
 
-std::vector<BoundingBox> load_detections(std::string csv_file) 
+std::vector<BoundingBox> load_frame_detections(std::string csv_file) 
 {
     std::vector<BoundingBox> boxes;
     std::ifstream f(csv_file);
@@ -165,7 +165,21 @@ std::vector<BoundingBox> load_detections(std::string csv_file)
     return boxes;
 }
 
-std::vector<Color> get_colors(int vec_len)
+std::vector<std::vector<BoundingBox>> load_detections(int frame_cnt, std::string tmp_folder) 
+{
+    std::vector<std::vector<BoundingBox>> detections(frame_cnt, std::vector<BoundingBox>());
+    for (int i = 0; i < frame_cnt; i += 1) 
+    {
+        std::cout << "Loading detections of frame " << i << std::endl;
+        std::stringstream ss;
+        ss << tmp_folder << "/csv/frame" << i << ".csv";
+        std::string csv_path = ss.str();
+        detections[i] = load_frame_detections(csv_path);
+    }
+    return detections;
+}
+
+std::vector<Color> get_colors(int vec_len) // mv to util
 {    
     std::vector<Color> colors;
     colors.reserve(vec_len);
@@ -239,16 +253,9 @@ int main(int argc, char **argv) {
     }
 
     detect(detector, detector_cfg, trimmed_video_frame_cnt - 1, tmp_video, tmp_fixtures);
-    std::vector<BoundingBox> detections[trimmed_video_frame_cnt];
-    for (int i = 0; i < trimmed_video_frame_cnt; i += 1) 
-    {
-        std::cout << "Loading detections of frame " << i << std::endl;
-        std::stringstream ss;
-        ss << tmp_fixtures << "/csv/frame" << i << ".csv";
-        std::string csv_path = ss.str();
-        detections[i] = load_detections(csv_path);
-    }
+    auto detections = load_detections(trimmed_video_frame_cnt, tmp_fixtures);
 
+    // unsigned int max_detections_per_frame = get_max_detections_per_frame()
     unsigned int max_detections_per_frame = 0;
     for(auto const& d : detections)
         if (d.size() > max_detections_per_frame)
@@ -260,6 +267,8 @@ int main(int argc, char **argv) {
     std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>());
     std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt];
 
+    // std::vector<std::vector<Location>> centers(trimmed_video_frame_cnt, std::vector<Location>()); = get_detection_centers()
+    // std::vector<std::vector<cv::Mat>> histograms(trimmed_video_frame_cnt, std::vector<cv::Mat>()); = get_detection_histograms()
     constexpr int channels[3] = {0, 1, 2};
     constexpr float range[2] = {0, 256};
     const float * ranges[3] = {range, range, range};
@@ -294,7 +303,8 @@ int main(int argc, char **argv) {
             }
         }
     }
-
+    
+    // std::vector<HistInterKernel> net_cost[trimmed_video_frame_cnt][trimmed_video_frame_cnt]; = get_net_cost();
     for (int i = 0; i < trimmed_video_frame_cnt; i++)
         for (int k = 0; k < histograms[i].size(); k++)
             for (int j = 0; j < trimmed_video_frame_cnt; j++)
