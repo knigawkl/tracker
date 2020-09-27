@@ -360,17 +360,38 @@ std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::v
     return detection_idxs;
 }
 
-double calculate_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
-                                 const std::vector<int> &detection_idxs, int seg_size, int seg_counter)
+double get_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+                                 const std::vector<int> &detection_idxs, int seg_counter)
 {
     double cost = 0;
-    int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size - 1; i++)
+    int start = seg_counter * detection_idxs.size();
+    for (int i = 0; i < detection_idxs.size() - 1; i++)
     {
         cost += net_cost[start+i][start+i+1][detection_idxs[i]].value;
     }
-    std::cout << "Appearance cost = " << cost << " in seg " << seg_counter << std::endl;
+    std::cout << "Appearance cost = " << cost << std::endl;
     return cost;
+}
+
+std::vector<Location> get_location_path(const std::vector<std::vector<Location>> &centers,
+                                        const std::vector<int> &detection_idxs, int seg_counter)
+{
+    std::vector<Location> path;
+    int start = seg_counter * detection_idxs.size();
+    for (int i = 0; i < detection_idxs.size(); i++)
+    {
+        path.push_back(centers[start+i][detection_idxs[i]]);
+    }
+    return path;
+}
+
+double get_motion_cost(const std::vector<std::vector<Location>> &centers,
+                       const std::vector<int> &detection_idxs, int seg_counter)
+{
+    auto path = get_location_path(centers, detection_idxs, seg_counter);
+    
+    double cost = 0;
+    std::cout << "Movement cost = " << cost << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -410,7 +431,8 @@ int main(int argc, char **argv) {
         {
             std::cout << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
-            auto cost = calculate_appearance_cost(net_cost, detection_idxs, segment_size, i);
+            auto app_cost = get_appearance_cost(net_cost, detection_idxs, i);
+            auto motion_cost = get_motion_cost(centers, detection_idxs, i);
 
             j++;
             // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
