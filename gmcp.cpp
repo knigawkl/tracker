@@ -341,18 +341,18 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detec
 }
 
 std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
-                                              int segment_size, int segment_counter)
+                                              int seg_size, int seg_counter)
 {
-    // returns indices of detections in subsequent frames that form a brute-force solution
+    // returns idxs of detections in subsequent frames that form a brute-force solution
     std::vector<int> detection_idxs;
-    detection_idxs.reserve(segment_size);
+    detection_idxs.reserve(seg_size);
 
-    int start = segment_counter * segment_size;
+    int start = seg_counter * seg_size;
     auto first_hik = get_cheapest(net_cost[start][start+1]);
     detection_idxs.push_back(first_hik.detection_idx1);
     detection_idxs.push_back(first_hik.detection_idx2);
 
-    for (int i = 1; i < segment_size - 1; i++)
+    for (int i = 1; i < seg_size - 1; i++)
     {
         auto hik = get_cheapest(net_cost[start+i][start+i+1], detection_idxs.back());
         detection_idxs.push_back(hik.detection_idx2);
@@ -360,10 +360,17 @@ std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::v
     return detection_idxs;
 }
 
-auto calculate_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
-                               const std::vector<int> detection_indices)
+double calculate_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+                                 const std::vector<int> &detection_idxs, int seg_size, int seg_counter)
 {
-    
+    double cost = 0;
+    int start = seg_counter * seg_size;
+    for (int i = 0; i < seg_size; i++)
+    {
+        cost += net_cost[start+i][start+i+1][detection_idxs[i]].value;
+    }
+    std::cout << "Appearance cost = " << cost << " in seg " << seg_counter << std::endl;
+    return cost;
 }
 
 int main(int argc, char **argv) {
@@ -397,17 +404,18 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < segment_cnt; i++)
     {
+        std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
         int j = 0;
         while (j < max_detections_per_frame)
         {
+            std::cout << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
-            
+            // auto cost = calculate_appearance_cost(net_cost, detection_idxs, segment_size, i);
+
             j++;
             // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
         }
     }
-
-    
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
