@@ -365,7 +365,7 @@ double calculate_appearance_cost(const std::vector<std::vector<std::vector<HistI
 {
     double cost = 0;
     int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size; i++)
+    for (int i = 0; i < seg_size - 1; i++)
     {
         cost += net_cost[start+i][start+i+1][detection_idxs[i]].value;
     }
@@ -410,7 +410,7 @@ int main(int argc, char **argv) {
         {
             std::cout << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
-            // auto cost = calculate_appearance_cost(net_cost, detection_idxs, segment_size, i);
+            auto cost = calculate_appearance_cost(net_cost, detection_idxs, segment_size, i);
 
             j++;
             // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
