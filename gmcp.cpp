@@ -388,10 +388,28 @@ std::vector<Location> get_location_path(const std::vector<std::vector<Location>>
 double get_motion_cost(const std::vector<std::vector<Location>> &centers,
                        const std::vector<int> &detection_idxs, int seg_counter)
 {
-    auto path = get_location_path(centers, detection_idxs, seg_counter);
-    
     double cost = 0;
-    std::cout << "Movement cost = " << cost << std::endl;
+    auto path = get_location_path(centers, detection_idxs, seg_counter);
+
+    // for (int i = 0; i < path.size()-1; i++)
+    // {
+    //     std::cout << "(" << path[i].x << "," << path[i].y << ")->";
+    // }
+    // std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
+
+    std::vector<int> x_diffs, y_diffs, sums;
+    int diff_size = detection_idxs.size() - 1;
+    sums.reserve(diff_size);
+    for (int i = 0; i < diff_size; i++)
+    {
+        sums.push_back(pow(path[i].x - path[i+1].x, 2) + pow(path[i].y - path[i+1].y, 2));
+    }
+    for (int i = 0; i < diff_size; i++)
+        cost += sums[i];
+    cost = sqrt(cost);
+
+    std::cout << "Motion cost     = " << cost << std::endl;
+    return cost;
 }
 
 int main(int argc, char **argv) {
