@@ -13,6 +13,7 @@
 #include <algorithm> 
 #include <chrono>
 #include <utility>
+#include <limits>
 
 #include "gmcp.hpp"
 #include "utils.hpp"
@@ -240,7 +241,7 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_folder));
-            for(auto const& d : detections[j])
+            for(auto const& d: detections[j])
             {
                 int width = d.x_max - d.x_min;
                 int height = d.y_max - d.y_min;
@@ -274,8 +275,8 @@ auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histog
                 for (int l = 0; l < histograms[j].size(); l++)
                 {
                     double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
-                                                                           histograms[j][l], 
-                                                                           3); // CV_COMP_INTERSECT
+                                                                        histograms[j][l], 
+                                                                        3); // CV_COMP_INTERSECT
                     HistInterKernel hik = {
                         .detection_idx1 = k,
                         .detection_idx2 = l,
@@ -301,6 +302,67 @@ void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt,
     {
         cp(in_video, tmp_video);
     }
+}
+
+HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
+{
+    double maxi = std::numeric_limits<double>::max();
+    HistInterKernel mini = {
+        .detection_idx1 = -1,
+        .detection_idx2 = -1,
+        .value = maxi
+    };
+    for(auto hik: hiks)
+    {
+        if (hik.value < mini.value)
+        {
+            mini = hik;
+        }
+    }
+    return mini;
+}
+
+HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detection_idx1)
+{
+    double maxi = std::numeric_limits<double>::max();
+    HistInterKernel mini = {
+        .detection_idx1 = -1,
+        .detection_idx2 = -1,
+        .value = maxi
+    };
+    for(auto hik: hiks)
+    {   
+        if (hik.detection_idx1 == detection_idx1 && hik.value < mini.value)
+        {
+            mini = hik;
+        }
+    }
+    return mini;
+}
+
+std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+                                              int segment_size)
+{
+    // returns indices of detections in subsequent frames that form a brute-force solution
+    std::vector<int> detection_idxs;
+    detection_idxs.reserve(segment_size);
+
+    auto first_hik = get_cheapest(net_cost[0][1]);
+    detection_idxs.push_back(first_hik.detection_idx1);
+    detection_idxs.push_back(first_hik.detection_idx2);
+
+    for (int i = 1; i < segment_size - 1; i++)
+    {
+        auto hik = get_cheapest(net_cost[i][i+1], detection_idxs.back());
+        detection_idxs.push_back(hik.detection_idx2);
+    }
+    return detection_idxs;
+}
+
+auto calculate_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+                               const std::vector<int> detection_indices)
+{
+    
 }
 
 int main(int argc, char **argv) {
@@ -338,14 +400,74 @@ int main(int argc, char **argv) {
     //     while (j < max_detections_per_frame)
     //     {
     //         // once a pedestrian is tracked, take corresponding detections out of net_cost matrix
-    //         // remove_done_frames można zrobić na końcu tej pętli
-             
-    //         ;
+            
+    //         j++;
+    //         // remove_done_frames
     //     }
     // }
+
+    auto detection_idxs = get_initial_detection_path(net_cost, segment_size);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     return 0;
 }
+
+
+
+
+
+
+// auto calculate_motion_cost(const std::vector<std::vector<Location>> &centers)
+//{
+/*
+function sol_cost=calc_sol_cost_motion(sol,centers_mat,n_frames_orig)
+
+[n_cands n_frames]=size(centers_mat);     to zwróci max detections x frame_cnt
+
+sub_inds=sub2ind(size(centers_mat),sol-(0:(n_frames-1))*n_cands,1:n_frames);
+centers_mat_sols=centers_mat(sub_inds);
+centers1=cell2mat(centers_mat_sols(:));
+
+velocity_vecs=diff(centers1);
+    
+% motion_model_type,'Holistic_Spatial')
+    
+[sol_cost,~] = calc_sol_cost_motion_Spatial_holistic_amirs(sol,centers_mat);
+alpha=0.000; % the balance between appearance and motion. bigger alpha, more effect from motion
+%alpha=0.002; % the balance between appearance and motion. bigger alpha, more effect from motion
+
+sol_cost=sol_cost*n_frames*n_frames*alpha;
+    
+% end of holistic spatial
+end
+*/
+//}
+
+// auto initialize_solution(const vector<vector<vector<HistInterKernel>>> &net_cost, 
+//                          const std::vector<std::vector<Location>> &centers, 
+//                          int max_detections_per_frame, int frame_cnt)
+//{
+
+/*
+function [INIT,init_sol_cost]=initialize_sol(netcostmat,NN,n_clusters,centers_mat,n_frames_orig)
+`
+sum1=sum(netcostmat,2);    co to jest za suma
+
+sum2=reshape(sum1,[NN n_clusters]);   pionowy wektor przerabiamy na macierz 2dd
+
+[~, mI]=min(sum2);    biorę indeksy tych detekcji, dla których wagi były najmniejsze
+
+IPI=0:NN:((n_clusters-1)*NN);  to jest wektor od 0 do (n_clusters-1)*NN co NN
+
+INIT=IPI+mI;    dodawanie wektorów elementwise
+
+init_sol_cost=calc_sol_cost_appearance(INIT,netcostmat)+calc_sol_cost_motion(INIT,centers_mat,n_frames_orig);
+
+end
+    */
+    // powinno zwrócić std::pair init, init sol cost
+    // powinno pobrać: netcostmat,NN,n_clusters,centers_mat,n_frames_orig,motion_model_type
+//     return ;
+// }
