@@ -341,19 +341,20 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detec
 }
 
 std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
-                                              int segment_size)
+                                              int segment_size, int segment_counter)
 {
     // returns indices of detections in subsequent frames that form a brute-force solution
     std::vector<int> detection_idxs;
     detection_idxs.reserve(segment_size);
 
-    auto first_hik = get_cheapest(net_cost[0][1]);
+    int start = segment_counter * segment_size;
+    auto first_hik = get_cheapest(net_cost[start][start+1]);
     detection_idxs.push_back(first_hik.detection_idx1);
     detection_idxs.push_back(first_hik.detection_idx2);
 
     for (int i = 1; i < segment_size - 1; i++)
     {
-        auto hik = get_cheapest(net_cost[i][i+1], detection_idxs.back());
+        auto hik = get_cheapest(net_cost[start+i][start+i+1], detection_idxs.back());
         detection_idxs.push_back(hik.detection_idx2);
     }
     return detection_idxs;
@@ -394,19 +395,19 @@ int main(int argc, char **argv) {
     auto histograms = cah.second;
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    // for (int i = 0; i < segment_cnt; i++)
-    // {
-    //     int j = 0;
-    //     while (j < max_detections_per_frame)
-    //     {
-    //         // once a pedestrian is tracked, take corresponding detections out of net_cost matrix
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        int j = 0;
+        while (j < max_detections_per_frame)
+        {
+            auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
             
-    //         j++;
-    //         // remove_done_frames
-    //     }
-    // }
+            j++;
+            // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
+        }
+    }
 
-    auto detection_idxs = get_initial_detection_path(net_cost, segment_size);
+    
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
