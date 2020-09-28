@@ -237,6 +237,7 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
             }
         }
     }
+    print_centers(centers);
     return std::make_pair(centers, histograms);
 }
 
@@ -253,8 +254,8 @@ auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histog
                 for (int l = 0; l < histograms[j].size(); l++) // to which detection
                 {
                     double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
-                                                                        histograms[j][l], 
-                                                                        3); // CV_COMP_INTERSECT
+                                                                           histograms[j][l], 
+                                                                           3); // CV_COMP_INTERSECT
                     HistInterKernel hik = {
                         .detection_id1 = k,
                         .detection_id2 = l,
@@ -480,7 +481,6 @@ int main(int argc, char **argv) {
                                                     tmp_folder);
     auto centers = cah.first;
     auto histograms = cah.second;
-    print_centers(centers);
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
     for (int i = 0; i < segment_cnt; i++)
