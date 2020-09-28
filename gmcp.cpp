@@ -223,25 +223,24 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
 auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
 {  
     using namespace std;
-    // histogram intersection kernels of each detection in each frame across each detection in each frame
-    vector<vector<vector<HistInterKernel>>> net_cost(frame_cnt, 
-                                                     vector<vector<HistInterKernel>>(frame_cnt, 
-                                                                                     vector<HistInterKernel>()));
-    for (int i = 0; i < frame_cnt; i++) // from which frame
+    int net_cost_size = 0;
+    vector<vector<HistInterKernel>> net_cost(frame_cnt, vector<HistInterKernel>());
+    for (int i = 0; i < frame_cnt - 1; i++) // from which frame
         for (int k = 0; k < histograms[i].size(); k++) // from which detection
-            for (int j = 0; j < frame_cnt; j++) // to which frame
-                for (int l = 0; l < histograms[j].size(); l++) // to which detection
-                {
-                    double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
-                                                                           histograms[j][l], 
-                                                                           3); // CV_COMP_INTERSECT
-                    HistInterKernel hik = {
-                        .detection_id1 = k,
-                        .detection_id2 = l,
-                        .value = histogram_intersection_kernel
-                    };
-                    net_cost[i][j].push_back(hik);
-                }
+            for (int l = 0; l < histograms[i+1].size(); l++) // to which detection
+            {
+                double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
+                                                                       histograms[i+1][l],
+                                                                       3); // CV_COMP_INTERSECT
+                HistInterKernel hik = {
+                    .detection_id1 = k,
+                    .detection_id2 = l,
+                    .value = histogram_intersection_kernel
+                };
+                net_cost[i].push_back(hik);
+                net_cost_size++;
+            }
+    std::cout << "Calculated " << net_cost_size << " histogram intersection kernels to form net_cost" << std::endl;
     return net_cost;
 }
 
@@ -281,7 +280,7 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detec
     return mini;
 }
 
-std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+std::vector<int> get_initial_detection_path(const std::vector<std::vector<HistInterKernel>> &net_cost,
                                               int seg_size, int seg_counter)
 {
     // returns ids of detections in subsequent frames that form a brute-force solution
@@ -289,35 +288,38 @@ std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::v
     detection_ids.reserve(seg_size); // one detection from each frame in a segment
 
     int start = seg_counter * seg_size;
-    auto first_hik = get_cheapest(net_cost[start][start+1]);
+    auto first_hik = get_cheapest(net_cost[start]);
     detection_ids.push_back(first_hik.detection_id1);
     detection_ids.push_back(first_hik.detection_id2);
 
     for (int i = 1; i < seg_size - 1; i++)
     {
-        auto hik = get_cheapest(net_cost[start+i][start+i+1], detection_ids.back());
+        auto hik = get_cheapest(net_cost[start+i], detection_ids.back());
         detection_ids.push_back(hik.detection_id2);
     }
     return detection_ids;
 }
 
-double get_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
+double get_appearance_cost(const std::vector<std::vector<HistInterKernel>> &net_cost,
                            const std::vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
+    int component_counter = 0;
     int start = seg_counter * detection_ids.size();
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        for(auto hik: net_cost[start+i][start+i+1]) // vector of Detections from frame start+i to frame start+i+1
+        for(auto hik: net_cost[start+i])
         {
             if (hik.detection_id1 == detection_ids[i] && hik.detection_id2 == detection_ids[i+1])
             {
                 cost += hik.value;
+                component_counter++;
                 break;
             }
         }
     }
-    std::cout << "Appearance cost = " << cost << std::endl;
+    std::cout << "Appearance cost = " << cost 
+              << ", based on " << component_counter << " components" << std::endl;
     return cost;
 }
 
@@ -388,14 +390,14 @@ void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id)
     }
 }
 
-void remove_path(std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
+void remove_path(std::vector<std::vector<HistInterKernel>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
     // for each frame
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
         // erase hiks with detection_id1 equal to id chosen for this frame
-        remove_hik(net_cost[start+i][start+i+1], detection_ids[i]);
+        remove_hik(net_cost[start+i], detection_ids[i]);
     }
     std::cout << "Removed " << detection_ids.size()-1 << " used intersection kernels" << std::endl;
 }
@@ -445,27 +447,27 @@ int main(int argc, char **argv) {
     auto histograms = cah.second;
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    for (int i = 0; i < segment_cnt; i++)
-    {
-        std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
-        print_detections_left_cnt(centers, i, segment_size);
-        int j = 0;
-        while (j < max_detections_per_frame)
-        {
-            if (is_empty(centers, i, segment_size))
-                break;
-            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
-            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
-            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-            auto motion_cost = get_motion_cost(centers, detection_ids, i);
+    // for (int i = 0; i < segment_cnt; i++)
+    // {
+    //     std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
+    //     print_detections_left_cnt(centers, i, segment_size);
+    //     int j = 0;
+    //     while (j < max_detections_per_frame)
+    //     {
+    //         if (is_empty(centers, i, segment_size))
+    //             break;
+    //         std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
+    //         auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
+    //         auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
+    //         auto motion_cost = get_motion_cost(centers, detection_ids, i);
 
-            remove_path(centers, detection_ids, i);
-            remove_path(net_cost, detection_ids, i);
-            j++;
-            print_detections_left_cnt(centers, i, segment_size);
-            print_detections_left_ids(centers, i, segment_size);
-        }
-    }
+    //         remove_path(centers, detection_ids, i);
+    //         remove_path(net_cost, detection_ids, i);
+    //         j++;
+    //         print_detections_left_cnt(centers, i, segment_size);
+    //         print_detections_left_ids(centers, i, segment_size);
+    //     }
+    // }
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
