@@ -398,11 +398,12 @@ void remove_path(std::vector<std::vector<HistInterKernel>> &net_cost, const std:
         std::vector<HistInterKernel> tmp;
         for (int j = 0; j < net_cost[start+i].size(); j++)
         {
-            if (net_cost[start+i][j].detection_id1 != detection_ids[i])
+            if (net_cost[start+i][j].detection_id1 != detection_ids[i] // remove hiks starting at used detection
+                && net_cost[start+i][j].detection_id2 != detection_ids[i+1]) // remove hiks leading to used detection
                 tmp.push_back(net_cost[start+i][j]);
         }
         net_cost[i] = tmp;
-    }
+    }   
 }
 
 bool is_empty(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
