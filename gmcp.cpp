@@ -412,6 +412,39 @@ double get_motion_cost(const std::vector<std::vector<Location>> &centers,
     return cost;
 }
 
+void remove_path(std::vector<std::vector<Location>> &centers, const std::vector<int> &detection_idxs, int seg_counter)
+{
+    int start = seg_counter * detection_idxs.size();
+    for (int i = 0; i < detection_idxs.size(); i++)
+    {
+        centers[start+i].erase(centers[start+i].begin() + detection_idxs[i]);
+    }
+}
+
+bool is_empty(const std::vector<std::vector<Location>> &centers, int seg_counter, int seg_size)
+{
+    bool result = false;
+    int start = seg_counter * seg_size;
+    for (int i = 0; i < seg_size; i++)
+    {
+        if (centers[start+i].empty())
+        {
+            std::cout << "Not enough detections in this segment for more paths" << std::endl;
+            return true;
+        }
+    }
+    return result;
+}
+
+void print_detections_left_cnt(const std::vector<std::vector<Location>> &centers, int seg_counter, int seg_size)
+{
+    int result = 0;
+    int start = seg_counter * seg_size;
+    for (int i = 0; i < seg_size; i++)
+        result += centers[start+i].size();
+    std::cout << "Detections left in segment: " << result << std::endl;
+}
+
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -447,11 +480,15 @@ int main(int argc, char **argv) {
         int j = 0;
         while (j < max_detections_per_frame)
         {
+            print_detections_left_cnt(centers, i, segment_size);
+            if (is_empty(centers, i, segment_size))
+                break;
             std::cout << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
             auto app_cost = get_appearance_cost(net_cost, detection_idxs, i);
             auto motion_cost = get_motion_cost(centers, detection_idxs, i);
 
+            remove_path(centers, detection_idxs, i);
             j++;
             // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
         }
