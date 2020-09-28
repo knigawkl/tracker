@@ -376,20 +376,32 @@ double get_appearance_cost(const std::vector<std::vector<std::vector<HistInterKe
     int start = seg_counter * detection_ids.size();
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        cost += net_cost[start+i][start+i+1][detection_ids[i]].value;
+        for(auto hik: net_cost[start+i][start+i+1]) // vector of Detections from frame start+i to frame start+i+1
+        {
+            if (hik.detection_id1 == detection_ids[i] && hik.detection_id2 == detection_ids[i+1])
+            {
+                cost += hik.value;
+                break;
+            }
+        }
     }
     std::cout << "Appearance cost = " << cost << std::endl;
     return cost;
 }
 
 std::vector<Detection> get_detection_path(const std::vector<std::vector<Detection>> &centers,
-                                        const std::vector<int> &detection_ids, int seg_counter)
+                                          const std::vector<int> &detection_ids, int seg_counter)
 {
     std::vector<Detection> path;
     int start = seg_counter * detection_ids.size();
-    for (int i = 0; i < detection_ids.size(); i++)
+    for (int i = 0; i < detection_ids.size(); i++) // for each detection id == for each frame
     {
-        path.push_back(centers[start+i][detection_ids[i]]);
+        // find Detection with desired id and push it back to the resulting vector
+        for(auto detection: centers[start+i])
+        {
+            if (detection.id == detection_ids[i])
+                path.push_back(detection);
+        }
     }
     return path;
 }
@@ -546,26 +558,26 @@ int main(int argc, char **argv) {
     print_centers(centers);
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    // for (int i = 0; i < segment_cnt; i++)
-    // {
-    //     std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
-    //     print_detections_left_cnt(centers, i, segment_size);
-    //     int j = 0;
-    //     while (j < max_detections_per_frame)
-    //     {
-    //         if (is_empty(centers, i, segment_size))
-    //             break;
-    //         std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
-    //         auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);     // id detekcji otrzymujemy na podstawie net cost
-    //         auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-    //         auto motion_cost = get_motion_cost(centers, detection_ids, i);
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
+        print_detections_left_cnt(centers, i, segment_size);
+        int j = 0;
+        while (j < max_detections_per_frame)
+        {
+            if (is_empty(centers, i, segment_size))
+                break;
+            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
+            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
+            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
+            auto motion_cost = get_motion_cost(centers, detection_ids, i);
 
     //         remove_path(centers, detection_ids, i);
     //         print_detections_left_cnt(centers, i, segment_size);
     //         remove_path(net_cost, detection_ids, i);
-    //         j++;
-    //     }
-    // }
+            j++;
+        }
+    }
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
