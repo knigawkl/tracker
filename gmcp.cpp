@@ -278,8 +278,8 @@ auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histog
                                                                         histograms[j][l], 
                                                                         3); // CV_COMP_INTERSECT
                     HistInterKernel hik = {
-                        .detection_idx1 = k,
-                        .detection_idx2 = l,
+                        .detection_id1 = k,
+                        .detection_id2 = l,
                         .value = histogram_intersection_kernel
                     };
                     net_cost[i][j].push_back(hik);
@@ -308,8 +308,8 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
-        .detection_idx1 = -1,
-        .detection_idx2 = -1,
+        .detection_id1 = -1,
+        .detection_id2 = -1,
         .value = maxi
     };
     for(auto hik: hiks)
@@ -322,17 +322,17 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
     return mini;
 }
 
-HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detection_idx1)
+HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detection_id1)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
-        .detection_idx1 = -1,
-        .detection_idx2 = -1,
+        .detection_id1 = -1,
+        .detection_id2 = -1,
         .value = maxi
     };
     for(auto hik: hiks)
     {   
-        if (hik.detection_idx1 == detection_idx1 && hik.value < mini.value)
+        if (hik.detection_id1 == detection_id1 && hik.value < mini.value)
         {
             mini = hik;
         }
@@ -344,52 +344,52 @@ std::vector<int> get_initial_detection_path(const std::vector<std::vector<std::v
                                               int seg_size, int seg_counter)
 {
     // returns idxs of detections in subsequent frames that form a brute-force solution
-    std::vector<int> detection_idxs;
-    detection_idxs.reserve(seg_size);
+    std::vector<int> detection_ids;
+    detection_ids.reserve(seg_size);
 
     int start = seg_counter * seg_size;
     auto first_hik = get_cheapest(net_cost[start][start+1]);
-    detection_idxs.push_back(first_hik.detection_idx1);
-    detection_idxs.push_back(first_hik.detection_idx2);
+    detection_ids.push_back(first_hik.detection_id1);
+    detection_ids.push_back(first_hik.detection_id2);
 
     for (int i = 1; i < seg_size - 1; i++)
     {
-        auto hik = get_cheapest(net_cost[start+i][start+i+1], detection_idxs.back());
-        detection_idxs.push_back(hik.detection_idx2);
+        auto hik = get_cheapest(net_cost[start+i][start+i+1], detection_ids.back());
+        detection_ids.push_back(hik.detection_id2);
     }
-    return detection_idxs;
+    return detection_ids;
 }
 
 double get_appearance_cost(const std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost,
-                                 const std::vector<int> &detection_idxs, int seg_counter)
+                           const std::vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
-    int start = seg_counter * detection_idxs.size();
-    for (int i = 0; i < detection_idxs.size() - 1; i++)
+    int start = seg_counter * detection_ids.size();
+    for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        cost += net_cost[start+i][start+i+1][detection_idxs[i]].value;
+        cost += net_cost[start+i][start+i+1][detection_ids[i]].value;
     }
     std::cout << "Appearance cost = " << cost << std::endl;
     return cost;
 }
 
 std::vector<Location> get_location_path(const std::vector<std::vector<Location>> &centers,
-                                        const std::vector<int> &detection_idxs, int seg_counter)
+                                        const std::vector<int> &detection_ids, int seg_counter)
 {
     std::vector<Location> path;
-    int start = seg_counter * detection_idxs.size();
-    for (int i = 0; i < detection_idxs.size(); i++)
+    int start = seg_counter * detection_ids.size();
+    for (int i = 0; i < detection_ids.size(); i++)
     {
-        path.push_back(centers[start+i][detection_idxs[i]]);
+        path.push_back(centers[start+i][detection_ids[i]]);
     }
     return path;
 }
 
 double get_motion_cost(const std::vector<std::vector<Location>> &centers,
-                       const std::vector<int> &detection_idxs, int seg_counter)
+                       const std::vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
-    auto path = get_location_path(centers, detection_idxs, seg_counter);
+    auto path = get_location_path(centers, detection_ids, seg_counter);
 
     // for (int i = 0; i < path.size()-1; i++)
     // {
@@ -398,7 +398,7 @@ double get_motion_cost(const std::vector<std::vector<Location>> &centers,
     // std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
 
     std::vector<int> x_diffs, y_diffs, sums;
-    int diff_size = detection_idxs.size() - 1;
+    int diff_size = detection_ids.size() - 1;
     sums.reserve(diff_size);
     for (int i = 0; i < diff_size; i++)
     {
@@ -412,13 +412,35 @@ double get_motion_cost(const std::vector<std::vector<Location>> &centers,
     return cost;
 }
 
-void remove_path(std::vector<std::vector<Location>> &centers, const std::vector<int> &detection_idxs, int seg_counter)
+void remove_path(std::vector<std::vector<Location>> &centers, const std::vector<int> &detection_ids, int seg_counter)
 {
-    int start = seg_counter * detection_idxs.size();
-    for (int i = 0; i < detection_idxs.size(); i++)
+    int start = seg_counter * detection_ids.size();
+    for (int i = 0; i < detection_ids.size(); i++)
     {
-        centers[start+i].erase(centers[start+i].begin() + detection_idxs[i]);
+        centers[start+i].erase(centers[start+i].begin() + detection_ids[i]);
     }
+}
+
+void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id1, int detection_id2)
+{
+    for (int i = 0; i < hiks.size(); i++)
+    {
+        if (hiks[i].detection_id1 == detection_id1 && hiks[i].detection_id2 == detection_id2)
+        {
+            hiks.erase(hiks.begin() + i);
+            break;
+        }    
+    }
+}
+
+void remove_path(std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
+{
+    int start = seg_counter * detection_ids.size();
+    for (int i = 0; i < detection_ids.size() - 1; i++)
+    {
+        remove_hik(net_cost[start+i][start+i+1], detection_ids[i], detection_ids[i+1]);
+    }
+    std::cout << "Removed " << detection_ids.size()-1 << " used intersection kernels" << std::endl;
 }
 
 bool is_empty(const std::vector<std::vector<Location>> &centers, int seg_counter, int seg_size)
@@ -484,11 +506,12 @@ int main(int argc, char **argv) {
             if (is_empty(centers, i, segment_size))
                 break;
             std::cout << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
-            auto detection_idxs = get_initial_detection_path(net_cost, segment_size, i);
-            auto app_cost = get_appearance_cost(net_cost, detection_idxs, i);
-            auto motion_cost = get_motion_cost(centers, detection_idxs, i);
+            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
+            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
+            auto motion_cost = get_motion_cost(centers, detection_ids, i);
 
-            remove_path(centers, detection_idxs, i);
+            remove_path(centers, detection_ids, i);
+            remove_path(net_cost, detection_ids, i);
             j++;
             // remove_done_frames (once a pedestrian is tracked, take corresponding detections out of net_cost matrix)
         }

@@ -12,6 +12,6 @@ struct BoundingBox
 
 struct HistInterKernel
 {
-    int detection_idx1, detection_idx2;
+    int detection_id1, detection_id2;
     double value;
 };
