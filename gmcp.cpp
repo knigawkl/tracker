@@ -220,6 +220,19 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
     return std::make_pair(centers, histograms);
 }
 
+void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
+{
+    // for debug purposes only
+    for(auto frame: net_cost)
+    {
+        std::cout << "========== net cost frame ==========" << std::endl;
+        for (auto hik: frame)
+            hik.print();
+    }
+
+    std::cout << std::endl;
+}
+
 auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
 {  
     using namespace std;
@@ -383,6 +396,7 @@ void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id)
         if (hiks[i].detection_id1 == detection_id)
         {
             hiks.erase(hiks.begin() + i);
+            std::cout << "Removing hik with first id = " << detection_id << std::endl;
         }    
     }
 }
@@ -390,7 +404,7 @@ void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id)
 void remove_path(std::vector<std::vector<HistInterKernel>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
-    // for each frame
+    // for each frame except the last one in the segment
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
         // erase hiks with detection_id1 equal to id chosen for this frame
@@ -451,6 +465,7 @@ int main(int argc, char **argv) {
         int j = 0;
         while (j < max_detections_per_frame)
         {
+            print_net_cost(net_cost);
             if (is_empty(centers, i, segment_size))
                 break;
             std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
