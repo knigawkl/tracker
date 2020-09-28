@@ -17,6 +17,7 @@
 
 #include "gmcp.hpp"
 #include "utils.hpp"
+#include "video.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -92,34 +93,12 @@ void verify_parameters(int segment_size, std::string in_video, std::string out_v
     }
 }
 
-int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
-{
-    return cap.get(cv::CAP_PROP_FRAME_COUNT);
-}
-
-int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment) 
-{
-    int video_in_frame_cnt = get_video_capture_frame_cnt(cap);
-    std::cout << "Input video frames count: " << video_in_frame_cnt << std::endl;
-    return video_in_frame_cnt / frames_in_segment * frames_in_segment;
-}
-
 std::string get_frame_path(int frame, std::string tmp_folder)
 {
     std::stringstream ss;
     ss << tmp_folder << "/img/frame" << std::to_string(frame) << ".jpeg";
     std::string path = ss.str();
     return path;
-}
-
-void trim_video(std::string video_in, std::string video_out, int frame_cnt) 
-{
-    std::stringstream ss;
-    ss << "ffmpeg -i " << video_in << " -vframes " << std::to_string(frame_cnt) 
-       << " -acodec copy -vcodec copy " << video_out << " -y";
-    std::string trim_command = ss.str();
-    std::cout << "Executing: " << trim_command << std::endl;
-    system(trim_command.c_str());
 }
 
 void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::string video, std::string tmp_folder) 
@@ -264,23 +243,6 @@ auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histog
                     net_cost[i][j].push_back(hik);
                 }
     return net_cost;
-}
-
-void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
-                       std::string tmp_folder, std::string in_video, std::string tmp_video)
-{
-    const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
-    if (video_in_frame_cnt != desired_frame_cnt)
-    {
-        std::string const trimmed_video = tmp_folder + "/trim.mp4";
-        trim_video(in_video, trimmed_video, desired_frame_cnt);
-        std::cout << "Input video frames count cut to: " << desired_frame_cnt << std::endl;
-        mv(trimmed_video, tmp_video);
-    }
-    else
-    {
-        cp(in_video, tmp_video);
-    }
 }
 
 HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
