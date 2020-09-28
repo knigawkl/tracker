@@ -408,11 +408,16 @@ std::vector<Detection> get_detection_path(const std::vector<std::vector<Detectio
 
 void print_detection_path(const std::vector<Detection> &path)
 {
-    for (int i = 0; i < path.size()-1; i++)
+    if (path.size())
     {
-        std::cout << "(" << path[i].x << "," << path[i].y << ")->";
+        for (int i = 0; i < path.size()-1; i++)
+        {
+            std::cout << "(" << path[i].x << "," << path[i].y << ")->";
+        }
+        std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
+    } else {
+        std::cout << "Empty detection path" << std::endl;
     }
-    std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
 }
 
 double get_motion_cost(const std::vector<std::vector<Detection>> &centers,
@@ -450,14 +455,13 @@ void remove_path(std::vector<std::vector<Detection>> &centers, const std::vector
     }   
 }
 
-void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id1, int detection_id2)
+void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id)
 {
     for (int i = 0; i < hiks.size(); i++)
     {
-        if (hiks[i].detection_id1 == detection_id1 && hiks[i].detection_id2 == detection_id2)
+        if (hiks[i].detection_id1 == detection_id)
         {
             hiks.erase(hiks.begin() + i);
-            break;
         }    
     }
 }
@@ -465,9 +469,11 @@ void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id1, int detec
 void remove_path(std::vector<std::vector<std::vector<HistInterKernel>>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
+    // for each frame
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        remove_hik(net_cost[start+i][start+i+1], detection_ids[i], detection_ids[i+1]);
+        // erase hiks with detection_id1 equal to id chosen for this frame
+        remove_hik(net_cost[start+i][start+i+1], detection_ids[i]);
     }
     std::cout << "Removed " << detection_ids.size()-1 << " used intersection kernels" << std::endl;
 }

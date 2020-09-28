@@ -23,4 +23,10 @@ struct HistInterKernel
 {
     int detection_id1, detection_id2;
     double value;
+    void print() const
+    {
+        std::cout << "detection_id1: " << detection_id1 
+                  << ", detection_id2: " << detection_id2 
+                  << ", value: " << value << std::endl;
+    }
 };
