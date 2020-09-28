@@ -389,28 +389,20 @@ void remove_path(std::vector<std::vector<Detection>> &centers, const std::vector
     }   
 }
 
-void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id)
-{
-    for (int i = 0; i < hiks.size(); i++)
-    {
-        if (hiks[i].detection_id1 == detection_id)
-        {
-            hiks.erase(hiks.begin() + i);
-            std::cout << "Removing hik with first id = " << detection_id << std::endl;
-        }    
-    }
-}
-
 void remove_path(std::vector<std::vector<HistInterKernel>> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
     // for each frame except the last one in the segment
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        // erase hiks with detection_id1 equal to id chosen for this frame
-        remove_hik(net_cost[start+i], detection_ids[i]);
+        std::vector<HistInterKernel> tmp;
+        for (int j = 0; j < net_cost[start+i].size(); j++)
+        {
+            if (net_cost[start+i][j].detection_id1 != detection_ids[i])
+                tmp.push_back(net_cost[start+i][j]);
+        }
+        net_cost[i] = tmp;
     }
-    std::cout << "Removed " << detection_ids.size()-1 << " used intersection kernels" << std::endl;
 }
 
 bool is_empty(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
