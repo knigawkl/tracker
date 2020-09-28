@@ -355,11 +355,7 @@ double get_motion_cost(const std::vector<std::vector<Detection>> &centers,
 {
     double cost = 0;
     auto path = get_detection_path(centers, detection_ids, seg_counter);
-    print_detection_path(path);
-
-    for (int i = 0; i < detection_ids.size(); i++) // todo remove this shitty print
-        std::cout << detection_ids[i] << " ";
-    std::cout << std::endl;
+    // print_detection_path(path);
 
     std::vector<int> x_diffs, y_diffs, sums;
     int diff_size = detection_ids.size() - 1;
