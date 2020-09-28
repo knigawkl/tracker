@@ -439,22 +439,15 @@ double get_motion_cost(const std::vector<std::vector<Detection>> &centers,
 
 void remove_path(std::vector<std::vector<Detection>> &centers, const std::vector<int> &detection_ids, int seg_counter)
 {
-    std::cout << "hejka1" << std::endl;
-    // wywalamy wykorzystane detekcje
-    std::cout << "seg_counter: " << seg_counter << std::endl;
-    for (auto detection: detection_ids)
-        std::cout << detection << " ";
-    std::cout << std::endl;
-    // tutaj cos sie zwaliło bo każę mu siegać do drugiego indeksu detekcji a mam tylko dwie detekcje (jakbym strzelał po trzeci element)
-
     int start = seg_counter * detection_ids.size();
-    for (int i = 0; i < detection_ids.size(); i++)
+    for(int i = 0; i < detection_ids.size(); i++)
     {
-        std::cout << "W tej klatce mam tyle detekcji: " << centers[start+i].size() << std::endl;
-        centers[start+i].erase(centers[start+i].begin() + detection_ids[i]);
+        for(int j = 0; j < centers[start+i].size(); j++)
+        {
+            if (centers[start+i][j].id == detection_ids[i])
+                centers[start+i].erase(centers[start+i].begin() + j);
+        }
     }   
-    std::cout << "hejka2" << std::endl;
-
 }
 
 void remove_hik(std::vector<HistInterKernel> &hiks, int detection_id1, int detection_id2)
@@ -501,6 +494,18 @@ void print_detections_left_cnt(const std::vector<std::vector<Detection>> &center
     for (int i = 0; i < seg_size; i++)
         result += centers[start+i].size();
     std::cout << "Detections left in segment: " << result << std::endl;
+}
+
+void print_detections_left_ids(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
+{
+    int start = seg_counter * seg_size;
+    for (int i = 0; i < seg_size; i++)
+    {
+        std::cout << "ids of detections left from frame " << i << ": ";
+        for (int j = 0; j < centers[start+i].size(); j++)
+            std::cout << centers[start+i][j].id << " ";
+        std::cout << std::endl;
+    }
 }
 
 void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes)
@@ -572,10 +577,11 @@ int main(int argc, char **argv) {
             auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
             auto motion_cost = get_motion_cost(centers, detection_ids, i);
 
-    //         remove_path(centers, detection_ids, i);
-    //         print_detections_left_cnt(centers, i, segment_size);
-    //         remove_path(net_cost, detection_ids, i);
+            remove_path(centers, detection_ids, i);
+            remove_path(net_cost, detection_ids, i);
             j++;
+            print_detections_left_cnt(centers, i, segment_size);
+            print_detections_left_ids(centers, i, segment_size);
         }
     }
 
