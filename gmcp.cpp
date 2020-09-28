@@ -20,20 +20,6 @@
 
 #include <opencv2/opencv.hpp>
 
-
-void print_usage_info()
-{
-    const char* usage_info =
-    "\n    -s, --segment_size   frames in a segment\n"
-    "    -i, --in_video         input video path\n"
-    "    -o, --out_video        output video path\n"
-    "    -d, --detector         object detector (ssd or yolo)\n"
-    "    -c, --detector_cfg     path to detector cfg\n"
-    "    -f, --tmp_folder       path to folder where temporary files will be stored\n"
-    "    -h, --help             show this help msg";
-    std::cout << usage_info << std::endl;
-}
-
 void get_parameters(int argc, char **argv, int& segment_size, std::string& in_video, std::string& out_video, 
                     std::string& detector, std::string& detector_cfg, std::string& tmp_folder)
 {
@@ -104,24 +90,6 @@ void verify_parameters(int segment_size, std::string in_video, std::string out_v
         std::cout << "Please specify path where tmp files should be stored. Aborting.";
         exit(0);
     }
-}
-
-void print_parameters(int segment_size, std::string in_video, std::string out_video, 
-                      std::string detector, std::string detector_cfg, std::string tmp_folder)
-{
-    printf("Segment size set to %d\n", segment_size);
-    printf("Input video path set to %s\n", in_video.c_str());
-    printf("Output video path set to %s\n", out_video.c_str());
-    printf("Detector set to %s\n", detector.c_str());
-    printf("Detector cfg path set to %s\n", detector_cfg.c_str());
-    printf("Temporary files will be stored in %s\n", tmp_folder.c_str());
-}
-
-void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
-{
-    std::cout << "Exec time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
-            << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
-            << "[s])" << std::endl;
 }
 
 int get_video_capture_frame_cnt(const cv::VideoCapture& cap)
@@ -213,6 +181,7 @@ std::vector<std::vector<BoundingBox>> load_bounding_boxes(int frame_cnt, std::st
         std::string csv_path = ss.str();
         boxes[i] = load_frame_bounding_boxes(csv_path);
     }
+    print_boxes(boxes);
     return boxes;
 }
 
@@ -406,26 +375,16 @@ std::vector<Detection> get_detection_path(const std::vector<std::vector<Detectio
     return path;
 }
 
-void print_detection_path(const std::vector<Detection> &path)
-{
-    if (path.size())
-    {
-        for (int i = 0; i < path.size()-1; i++)
-        {
-            std::cout << "(" << path[i].x << "," << path[i].y << ")->";
-        }
-        std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
-    } else {
-        std::cout << "Empty detection path" << std::endl;
-    }
-}
-
 double get_motion_cost(const std::vector<std::vector<Detection>> &centers,
                        const std::vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
     auto path = get_detection_path(centers, detection_ids, seg_counter);
     print_detection_path(path);
+
+    for (int i = 0; i < detection_ids.size(); i++) // todo remove this shitty print
+        std::cout << detection_ids[i] << " ";
+    std::cout << std::endl;
 
     std::vector<int> x_diffs, y_diffs, sums;
     int diff_size = detection_ids.size() - 1;
@@ -493,51 +452,6 @@ bool is_empty(const std::vector<std::vector<Detection>> &centers, int seg_counte
     return result;
 }
 
-void print_detections_left_cnt(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
-{
-    int result = 0;
-    int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size; i++)
-        result += centers[start+i].size();
-    std::cout << "Detections left in segment: " << result << std::endl;
-}
-
-void print_detections_left_ids(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
-{
-    int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size; i++)
-    {
-        std::cout << "ids of detections left from frame " << i << ": ";
-        for (int j = 0; j < centers[start+i].size(); j++)
-            std::cout << centers[start+i][j].id << " ";
-        std::cout << std::endl;
-    }
-}
-
-void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes)
-{
-    for (int i = 0; i < boxes.size(); i++)
-    {
-        std::cout << "Bounding boxes in frame " << i << std::endl;
-        for(int j = 0; j < boxes[i].size(); j++)
-        {
-            boxes[i][j].print();
-        }
-    }
-}
-
-void print_centers(const std::vector<std::vector<Detection>> &centers)
-{
-    for (int i = 0; i < centers.size(); i++)
-    {
-        std::cout << "Detections in frame " << i << std::endl;
-        for(int j = 0; j < centers[i].size(); j++)
-        {
-            centers[i][j].print();
-        }
-    }
-}
-
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -558,7 +472,7 @@ int main(int argc, char **argv) {
     auto boxes = load_bounding_boxes(frame_cnt, tmp_folder);
     auto max_detections_per_frame = get_max_detections_per_frame(boxes);
     auto colors = get_colors(max_detections_per_frame);
-    print_boxes(boxes);
+    
     
     auto cah = get_detection_centers_and_histograms(boxes, 
                                                     frame_cnt, 
