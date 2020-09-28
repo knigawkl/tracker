@@ -223,7 +223,6 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
 auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
 {  
     using namespace std;
-    int net_cost_size = 0;
     vector<vector<HistInterKernel>> net_cost(frame_cnt, vector<HistInterKernel>());
     for (int i = 0; i < frame_cnt - 1; i++) // from which frame
         for (int k = 0; k < histograms[i].size(); k++) // from which detection
@@ -238,9 +237,7 @@ auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histog
                     .value = histogram_intersection_kernel
                 };
                 net_cost[i].push_back(hik);
-                net_cost_size++;
             }
-    std::cout << "Calculated " << net_cost_size << " histogram intersection kernels to form net_cost" << std::endl;
     return net_cost;
 }
 
@@ -447,27 +444,28 @@ int main(int argc, char **argv) {
     auto histograms = cah.second;
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    // for (int i = 0; i < segment_cnt; i++)
-    // {
-    //     std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
-    //     print_detections_left_cnt(centers, i, segment_size);
-    //     int j = 0;
-    //     while (j < max_detections_per_frame)
-    //     {
-    //         if (is_empty(centers, i, segment_size))
-    //             break;
-    //         std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
-    //         auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
-    //         auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-    //         auto motion_cost = get_motion_cost(centers, detection_ids, i);
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
+        print_detections_left_cnt(centers, i, segment_size);
+        int j = 0;
+        while (j < max_detections_per_frame)
+        {
+            if (is_empty(centers, i, segment_size))
+                break;
+            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
+            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
 
-    //         remove_path(centers, detection_ids, i);
-    //         remove_path(net_cost, detection_ids, i);
-    //         j++;
-    //         print_detections_left_cnt(centers, i, segment_size);
-    //         print_detections_left_ids(centers, i, segment_size);
-    //     }
-    // }
+            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
+            auto motion_cost = get_motion_cost(centers, detection_ids, i);
+
+            remove_path(centers, detection_ids, i);
+            remove_path(net_cost, detection_ids, i);
+            print_detections_left_cnt(centers, i, segment_size);
+            print_detections_left_ids(centers, i, segment_size);
+            j++;
+        }
+    }
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
