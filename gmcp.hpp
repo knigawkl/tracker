@@ -3,7 +3,7 @@
 struct Detection
 {
     int x, y, id;
-    void print()
+    void print() const
     {
         std::cout << "x: " << x << ", y: " << y << ", id: " << id << std::endl;
     }

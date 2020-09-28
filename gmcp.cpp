@@ -204,6 +204,7 @@ std::vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file)
 
 std::vector<std::vector<BoundingBox>> load_bounding_boxes(int frame_cnt, std::string tmp_folder) 
 {
+    // loads a vector of BoundingBoxes for each frame
     std::vector<std::vector<BoundingBox>> boxes(frame_cnt, std::vector<BoundingBox>());
     for (int i = 0; i < frame_cnt; i += 1) 
     {
@@ -217,6 +218,7 @@ std::vector<std::vector<BoundingBox>> load_bounding_boxes(int frame_cnt, std::st
 
 int get_max_detections_per_frame(const std::vector<std::vector<BoundingBox>> &boxes)
 {
+    // checks what is the biggest number of detections in a single frame
     int maxi = 0;
     for(auto const& b : boxes)
         if (b.size() > maxi)
@@ -229,8 +231,11 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
                                           int frame_cnt, int segment_cnt, int segment_size,
                                           const std::string &tmp_folder)
 {
+    // vector of Detections for each frame
     std::vector<std::vector<Detection>> centers(frame_cnt, std::vector<Detection>());
-    std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>());
+    // vector of histogram matrices of detection images for each frame
+    // detection of id==0 has its histogram at the start of the vector and so on and on
+    std::vector<std::vector<cv::Mat>> histograms(frame_cnt, std::vector<cv::Mat>()); 
     constexpr int channels[3] = {0, 1, 2};
     constexpr float range[2] = {0, 256};
     const float * ranges[3] = {range, range, range};
@@ -259,7 +264,7 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
                 cv::Mat hist;
                 cv::Mat detection = frame(cv::Rect(x_center, y_center, width, height));
                 cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
-                histograms[j].push_back(hist);
+                histograms[j].push_back(hist); // 
             }
         }
     }
@@ -269,13 +274,14 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
 auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
 {  
     using namespace std;
+    // histogram intersection kernels of each detection in each frame across each detection in each frame
     vector<vector<vector<HistInterKernel>>> net_cost(frame_cnt, 
                                                      vector<vector<HistInterKernel>>(frame_cnt, 
                                                                                      vector<HistInterKernel>()));
-    for (int i = 0; i < frame_cnt; i++)
-        for (int k = 0; k < histograms[i].size(); k++)
-            for (int j = 0; j < frame_cnt; j++)
-                for (int l = 0; l < histograms[j].size(); l++)
+    for (int i = 0; i < frame_cnt; i++) // from which frame
+        for (int k = 0; k < histograms[i].size(); k++) // from which detection
+            for (int j = 0; j < frame_cnt; j++) // to which frame
+                for (int l = 0; l < histograms[j].size(); l++) // to which detection
                 {
                     double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
                                                                         histograms[j][l], 
@@ -485,14 +491,26 @@ void print_detections_left_cnt(const std::vector<std::vector<Detection>> &center
     std::cout << "Detections left in segment: " << result << std::endl;
 }
 
-void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes, int frame_cnt)
+void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes)
 {
-    for (int i = 0; i < frame_cnt; i++)
+    for (int i = 0; i < boxes.size(); i++)
     {
         std::cout << "Bounding boxes in frame " << i << std::endl;
         for(int j = 0; j < boxes[i].size(); j++)
         {
             boxes[i][j].print();
+        }
+    }
+}
+
+void print_centers(const std::vector<std::vector<Detection>> &centers)
+{
+    for (int i = 0; i < centers.size(); i++)
+    {
+        std::cout << "Detections in frame " << i << std::endl;
+        for(int j = 0; j < centers[i].size(); j++)
+        {
+            centers[i][j].print();
         }
     }
 }
@@ -516,17 +534,17 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto boxes = load_bounding_boxes(frame_cnt, tmp_folder);
     auto max_detections_per_frame = get_max_detections_per_frame(boxes);
-    print_boxes(boxes, frame_cnt);
+    auto colors = get_colors(max_detections_per_frame);
+    print_boxes(boxes);
     
-    // auto colors = get_colors(max_detections_per_frame);
-    
-    // auto cah = get_detection_centers_and_histograms(detections, 
-    //                                                 frame_cnt, 
-    //                                                 segment_cnt, segment_size,
-    //                                                 tmp_folder);
-    // auto centers = cah.first;
-    // auto histograms = cah.second;
-    // auto net_cost = get_net_cost(frame_cnt, histograms);
+    auto cah = get_detection_centers_and_histograms(boxes, 
+                                                    frame_cnt, 
+                                                    segment_cnt, segment_size,
+                                                    tmp_folder);
+    auto centers = cah.first;
+    auto histograms = cah.second;
+    print_centers(centers);
+    auto net_cost = get_net_cost(frame_cnt, histograms);
 
     // for (int i = 0; i < segment_cnt; i++)
     // {
