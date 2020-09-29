@@ -435,6 +435,22 @@ auto track(vector2d<Detection> &detections,
     return tracklets;
 }
 
+// vector2d<> merge_tracklets(vector3d<Detection> tracklets)
+// {
+
+// }
+
+void draw_bounding_boxes()
+{
+    // draw detections on tmp frames
+    // get_frame_path sie przyda
+}
+
+void merge_frames(std::string tmp_folder)
+{
+    // create a video out of tmp frames
+}
+
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -465,10 +481,11 @@ int main(int argc, char **argv) {
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
     auto tracklets = track(detections, net_cost, segment_cnt, segment_size, max_detections_per_frame);
-    // draw detections on frames
-    // create a video out of tmp frames
+    // auto trajectories = merge_tracklets(tracklets);
+    // draw_bounding_boxes(trajectories);
+    // merge_frames(tmp_folder);
 
-    clear_tmp(tmp_folder);
+    // clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     print_detect_time(detect_begin, detect_end);

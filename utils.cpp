@@ -130,7 +130,7 @@ void print_detections(const vector2d<Detection> &detections)
     for (int i = 0; i < detections.size(); i++)
     {
         std::cout << "Detections in frame " << i << std::endl;
-        for(int j = 0; j < detections[i].size(); j++)
+        for (int j = 0; j < detections[i].size(); j++)
         {
             detections[i][j].print();
         }
@@ -140,7 +140,7 @@ void print_detections(const vector2d<Detection> &detections)
 void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
 {
     // for debug purposes only
-    for(auto frame: net_cost)
+    for (auto frame: net_cost)
     {
         std::cout << "========== net cost frame ==========" << std::endl;
         for (auto hik: frame)
@@ -156,7 +156,7 @@ void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt)
     for (int i = 0; i < segment_cnt; i++)
     {
         std::cout << "Tracklets found in segment " << i+1 << "/" << segment_cnt << std::endl;
-        for (int j = 0; j < tracklets[i].size(); j++) // sprawdzic czy for( istnieje
+        for (int j = 0; j < tracklets[i].size(); j++)
         {
             std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
             print_detection_path(tracklets[i][j]);
