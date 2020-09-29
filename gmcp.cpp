@@ -181,7 +181,7 @@ int get_max_detections_per_frame(const vector2d<Detection> &detections)
 {
     // checks what is the biggest number of detections in a single frame
     int maxi = 0;
-    for(auto const& d : detections)
+    for (auto const& d : detections)
         if (d.size() > maxi)
             maxi = d.size();
     std::cout << "Max number of detections per frame is: " << maxi << std::endl;
@@ -205,7 +205,7 @@ auto get_detection_histograms(const vector2d<Detection> &detections,
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_folder));
-            for(auto const& d: detections[j])
+            for (auto const& d: detections[j])
             {
                 int width = d.x_max - d.x_min;
                 int height = d.y_max - d.y_min;                
@@ -247,7 +247,7 @@ HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
         .detection_id2 = -1,
         .value = maxi
     };
-    for(auto hik: hiks)
+    for (auto hik: hiks)
     {
         if (hik.value < mini.value)
         {
@@ -265,7 +265,7 @@ HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int detection_
         .detection_id2 = -1,
         .value = maxi
     };
-    for(auto hik: hiks)
+    for (auto hik: hiks)
     {   
         if (hik.detection_id1 == detection_id1 && hik.value < mini.value)
         {
@@ -303,7 +303,7 @@ double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
     int start = seg_counter * detection_ids.size();
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        for(auto hik: net_cost[start+i])
+        for (auto hik: net_cost[start+i])
         {
             if (hik.detection_id1 == detection_ids[i] && hik.detection_id2 == detection_ids[i+1])
             {
@@ -326,7 +326,7 @@ vector<Detection> get_detection_path(const vector2d<Detection> &detections,
     for (int i = 0; i < detection_ids.size(); i++) // for each detection id == for each frame
     {
         // find Detection with desired id and push it back to the resulting vector
-        for(auto detection: detections[start+i])
+        for (auto detection: detections[start+i])
         {
             if (detection.id == detection_ids[i])
                 path.push_back(detection);
@@ -357,9 +357,9 @@ double get_motion_cost(const vector<Detection> &path,
 void remove_path(vector2d<Detection> &detections, const vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
-    for(int i = 0; i < detection_ids.size(); i++)
+    for (int i = 0; i < detection_ids.size(); i++)
     {
-        for(int j = 0; j < detections[start+i].size(); j++)
+        for (int j = 0; j < detections[start+i].size(); j++)
         {
             if (detections[start+i][j].id == detection_ids[i])
                 detections[start+i].erase(detections[start+i].begin() + j);
