@@ -113,7 +113,7 @@ void print_parameters(int segment_size, std::string in_video, std::string out_vi
 
 void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
 {
-    std::cout << "Exec time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
+    std::cout << "Execution time = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
             << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
             << "[s])" << std::endl;
 }
@@ -160,4 +160,18 @@ void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
     }
 
     std::cout << std::endl;
+}
+
+void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt)
+{
+    std::cout << std::endl;
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << "Tracklets found in segment " << i+1 << "/" << segment_cnt << std::endl;
+        for (int j = 0; j < tracklets[i].size(); j++) // sprawdzic czy for( istnieje
+        {
+            std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
+            print_detection_path(tracklets[i][j]);
+        }
+    }
 }

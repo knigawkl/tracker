@@ -433,12 +433,8 @@ auto track(vector2d<Detection> &centers,
             j++;
         }
     }
+    print_tracklets(tracklets, segment_cnt);
     return tracklets;
-}
-
-void print_tracklets()
-{
-
 }
 
 int main(int argc, char **argv) {

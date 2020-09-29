@@ -38,3 +38,4 @@ void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono:
 void print_boxes(const vector2d<BoundingBox> &boxes);
 void print_centers(const vector2d<Detection> &centers);
 void print_net_cost(const vector2d<HistInterKernel> &net_cost);
+void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt);
