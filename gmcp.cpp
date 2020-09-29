@@ -116,9 +116,9 @@ void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::
     system(detect_command.c_str());
 }
 
-std::vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file) 
+vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file) 
 {
-    std::vector<BoundingBox> boxes;
+    vector<BoundingBox> boxes;
     std::ifstream f(csv_file);
     std::string line, colname;
     int val;
@@ -152,7 +152,7 @@ std::vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file)
 vector2d<BoundingBox> load_bounding_boxes(int frame_cnt, std::string tmp_folder) 
 {
     // loads a vector of BoundingBoxes for each frame
-    vector2d<BoundingBox> boxes(frame_cnt, std::vector<BoundingBox>());
+    vector2d<BoundingBox> boxes(frame_cnt, vector<BoundingBox>());
     for (int i = 0; i < frame_cnt; i += 1) 
     {
         std::stringstream ss;
@@ -180,10 +180,10 @@ auto get_detection_centers_and_histograms(const vector2d<BoundingBox> &boxes,
                                           const std::string &tmp_folder)
 {
     // vector of Detections for each frame
-    vector2d<Detection> centers(frame_cnt, std::vector<Detection>());
+    vector2d<Detection> centers(frame_cnt, vector<Detection>());
     // vector of histogram matrices of detection images for each frame
     // detection of id==0 has its histogram at the start of the vector and so on and on
-    vector2d<cv::Mat> histograms(frame_cnt, std::vector<cv::Mat>()); 
+    vector2d<cv::Mat> histograms(frame_cnt, vector<cv::Mat>()); 
     constexpr int channels[3] = {0, 1, 2};
     constexpr float range[2] = {0, 256};
     const float * ranges[3] = {range, range, range};
@@ -222,7 +222,7 @@ auto get_detection_centers_and_histograms(const vector2d<BoundingBox> &boxes,
 
 auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
 {  
-    vector2d<HistInterKernel> net_cost(frame_cnt, std::vector<HistInterKernel>());
+    vector2d<HistInterKernel> net_cost(frame_cnt, vector<HistInterKernel>());
     for (int i = 0; i < frame_cnt - 1; i++) // from which frame
         for (int k = 0; k < histograms[i].size(); k++) // from which detection
             for (int l = 0; l < histograms[i+1].size(); l++) // to which detection
@@ -240,7 +240,7 @@ auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
     return net_cost;
 }
 
-HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
+HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
@@ -258,7 +258,7 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks)
     return mini;
 }
 
-HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detection_id1)
+HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int detection_id1)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
@@ -276,11 +276,11 @@ HistInterKernel get_cheapest(const std::vector<HistInterKernel> &hiks, int detec
     return mini;
 }
 
-std::vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net_cost,
-                                              int seg_size, int seg_counter)
+vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net_cost,
+                                       int seg_size, int seg_counter)
 {
     // returns ids of detections in subsequent frames that form a brute-force solution
-    std::vector<int> detection_ids;
+    vector<int> detection_ids;
     detection_ids.reserve(seg_size); // one detection from each frame in a segment
 
     int start = seg_counter * seg_size;
@@ -297,7 +297,7 @@ std::vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net
 }
 
 double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
-                           const std::vector<int> &detection_ids, int seg_counter)
+                           const vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
     int component_counter = 0;
@@ -319,10 +319,10 @@ double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
     return cost;
 }
 
-std::vector<Detection> get_detection_path(const vector2d<Detection> &centers,
-                                          const std::vector<int> &detection_ids, int seg_counter)
+vector<Detection> get_detection_path(const vector2d<Detection> &centers,
+                                     const vector<int> &detection_ids, int seg_counter)
 {
-    std::vector<Detection> path;
+    vector<Detection> path;
     int start = seg_counter * detection_ids.size();
     for (int i = 0; i < detection_ids.size(); i++) // for each detection id == for each frame
     {
@@ -336,13 +336,11 @@ std::vector<Detection> get_detection_path(const vector2d<Detection> &centers,
     return path;
 }
 
-double get_motion_cost(const vector2d<Detection> &centers, const std::vector<Detection> &path,
-                       const std::vector<int> &detection_ids, int seg_counter)
+double get_motion_cost(const vector2d<Detection> &centers, const vector<Detection> &path,
+                       const vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
-    // print_detection_path(path);
-
-    std::vector<int> x_diffs, y_diffs, sums;
+    vector<int> x_diffs, y_diffs, sums;
     int diff_size = detection_ids.size() - 1;
     sums.reserve(diff_size);
     for (int i = 0; i < diff_size; i++)
@@ -357,7 +355,7 @@ double get_motion_cost(const vector2d<Detection> &centers, const std::vector<Det
     return cost;
 }
 
-void remove_path(vector2d<Detection> &centers, const std::vector<int> &detection_ids, int seg_counter)
+void remove_path(vector2d<Detection> &centers, const vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
     for(int i = 0; i < detection_ids.size(); i++)
@@ -370,13 +368,13 @@ void remove_path(vector2d<Detection> &centers, const std::vector<int> &detection
     }   
 }
 
-void remove_path(vector2d<HistInterKernel> &net_cost, const std::vector<int> &detection_ids, int seg_counter)
+void remove_path(vector2d<HistInterKernel> &net_cost, const vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
     // for each frame except the last one in the segment
     for (int i = 0; i < detection_ids.size() - 1; i++)
     {
-        std::vector<HistInterKernel> tmp;
+        vector<HistInterKernel> tmp;
         for (int j = 0; j < net_cost[start+i].size(); j++)
         {
             if (net_cost[start+i][j].detection_id1 != detection_ids[i] // remove hiks starting at used detection
@@ -405,7 +403,6 @@ auto track(vector2d<Detection> &centers,
            vector2d<HistInterKernel> &net_cost, 
            int segment_cnt, int segment_size, int max_detections_per_frame)
 {
-    using namespace std;
     vector3d<Detection> tracklets(segment_cnt, vector2d<Detection>(max_detections_per_frame, vector<Detection>()));
 
     for (int i = 0; i < segment_cnt; i++)
