@@ -40,13 +40,17 @@ void cp(std::string what, std::string where)
     system(cp_command.c_str());
 }
 
-std::vector<Color> get_colors(int vec_len)
+std::vector<cv::Scalar> get_colors(int vec_len)
 {    
-    std::vector<Color> colors;
+    std::vector<cv::Scalar> colors;
     colors.reserve(vec_len);
+    uint8_t r, g, b;
     for (int i = 0; i < vec_len; i++)
     {
-        colors.push_back(Color());
+        b = rand() % 256;
+        r = rand() % 256;
+        g = rand() % 256;
+        colors.push_back(cv::Scalar(b, g, r));
     }
     return colors;
 }

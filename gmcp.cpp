@@ -440,6 +440,15 @@ auto track(vector2d<Detection> &detections,
 
 // }
 
+void draw_rectangle(cv::Mat img, const Detection &d)
+{
+    cv::Rect rect( );  // store detection width and height ()
+
+    //Rect r=Rect(10,20,40,60);
+    //create a Rect with top-left vertex at (10,20), of width 40 and height 60 pixels.
+    //cv::rectangle(img, );
+}
+
 void draw_bounding_boxes()
 {
     // draw detections on tmp frames

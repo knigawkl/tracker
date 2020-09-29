@@ -6,6 +6,8 @@
 
 #include "gmcp.hpp"
 
+#include <opencv2/opencv.hpp>
+
 void make_tmp_dirs(std::string tmp_folder);
 
 void clear_tmp(std::string tmp_folder);
@@ -14,18 +16,7 @@ void mv(std::string what, std::string where);
 
 void cp(std::string what, std::string where);
 
-struct Color
-{
-    int r, g, b;
-    Color()
-    {
-        r = rand() % 256;
-        g = rand() % 256;
-        b = rand() % 256;
-    }
-};
-
-std::vector<Color> get_colors(int vec_len);
+std::vector<cv::Scalar> get_colors(int vec_len);
 
 void print_usage_info();
 void print_detection_path(const std::vector<Detection> &path);
