@@ -128,7 +128,7 @@ vector<Detection> load_frame_detections(std::string csv_file)
 
     // one bounding box a line
     int id = 0;
-    int x_min, y_min, x_max, y_max, x_center, y_center;
+    int x_min, y_min, x_max, y_max, x_center, y_center, height, width;
     while(std::getline(f, line))
     {
         std::stringstream ss(line); 
@@ -146,6 +146,8 @@ vector<Detection> load_frame_detections(std::string csv_file)
         y_max = coords[3];
         x_center = (x_min + x_max) / 2;
         y_center = (y_min + y_max) / 2;
+        height = y_max - y_min;
+        width = x_max - x_min;
         Detection det = {
             .x = x_center,
             .y = y_center,
@@ -153,7 +155,9 @@ vector<Detection> load_frame_detections(std::string csv_file)
             .x_min = x_min,
             .y_min = y_min,
             .x_max = x_max,
-            .y_max = y_max
+            .y_max = y_max,
+            .height = height,
+            .width = width
         };
         id++;
         detections.push_back(det);
@@ -207,10 +211,8 @@ auto get_detection_histograms(const vector2d<Detection> &detections,
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_folder));
             for (auto const& d: detections[j])
             {
-                int width = d.x_max - d.x_min;
-                int height = d.y_max - d.y_min;                
                 cv::Mat hist;
-                cv::Mat detection = frame(cv::Rect(d.x, d.y, width, height));
+                cv::Mat detection = frame(cv::Rect(d.x, d.y, d.width, d.height));
                 cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
                 histograms[j].push_back(hist); // 
             }
