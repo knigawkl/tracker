@@ -470,17 +470,18 @@ int main(int argc, char **argv) {
     auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
-    auto detections = load_detections(frame_cnt, tmp_folder);
-    auto max_detections_per_frame = get_max_detections_per_frame(detections);
+    vector2d<Detection> detections = load_detections(frame_cnt, tmp_folder);
+    int max_detections_per_frame = get_max_detections_per_frame(detections);
     auto colors = get_colors(max_detections_per_frame);
     
-    auto histograms = get_detection_histograms(detections, 
-                                               frame_cnt, 
-                                               segment_cnt, segment_size,
-                                               tmp_folder);
-    auto net_cost = get_net_cost(frame_cnt, histograms);
+    vector2d<cv::Mat> histograms = get_detection_histograms(detections, 
+                                                            frame_cnt, 
+                                                            segment_cnt, segment_size,
+                                                            tmp_folder);
+    vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms);
 
-    auto tracklets = track(detections, net_cost, segment_cnt, segment_size, max_detections_per_frame);
+    vector3d<Detection> tracklets = track(detections, net_cost, 
+                                          segment_cnt, segment_size, max_detections_per_frame);
     // auto trajectories = merge_tracklets(tracklets);
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
