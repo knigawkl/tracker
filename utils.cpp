@@ -125,26 +125,14 @@ void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono:
             << "[s])" << std::endl;
 }
 
-void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes)
+void print_detections(const vector2d<Detection> &detections)
 {
-    for (int i = 0; i < boxes.size(); i++)
-    {
-        std::cout << "Bounding boxes in frame " << i << std::endl;
-        for(int j = 0; j < boxes[i].size(); j++)
-        {
-            boxes[i][j].print();
-        }
-    }
-}
-
-void print_centers(const std::vector<std::vector<Detection>> &centers)
-{
-    for (int i = 0; i < centers.size(); i++)
+    for (int i = 0; i < detections.size(); i++)
     {
         std::cout << "Detections in frame " << i << std::endl;
-        for(int j = 0; j < centers[i].size(); j++)
+        for(int j = 0; j < detections[i].size(); j++)
         {
-            centers[i][j].print();
+            detections[i][j].print();
         }
     }
 }

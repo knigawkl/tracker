@@ -116,9 +116,9 @@ void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::
     system(detect_command.c_str());
 }
 
-vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file) 
+vector<Detection> load_frame_detections(std::string csv_file) 
 {
-    vector<BoundingBox> boxes;
+    vector<Detection> detections;
     std::ifstream f(csv_file);
     std::string line, colname;
     int val;
@@ -126,6 +126,9 @@ vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file)
     if(!f.is_open()) 
          throw std::runtime_error("Could not open file");
 
+    // one bounding box a line
+    int id = 0;
+    int x_min, y_min, x_max, y_max, x_center, y_center;
     while(std::getline(f, line))
     {
         std::stringstream ss(line); 
@@ -137,50 +140,62 @@ vector<BoundingBox> load_frame_bounding_boxes(std::string csv_file)
             getline(ss, substr, ',');
             coords[i] = std::stoi(substr);
         }
-        BoundingBox box = {
-            .x_min = coords[0],
-            .y_min = coords[1],
-            .x_max = coords[2],
-            .y_max = coords[3]
+        x_min = coords[0];
+        y_min = coords[1];
+        x_max = coords[2];
+        y_max = coords[3];
+        x_center = (x_min + x_max) / 2;
+        y_center = (y_min + y_max) / 2;
+        Detection det = {
+            .x = x_center,
+            .y = y_center,
+            .id = id,
+            .x_min = x_min,
+            .y_min = y_min,
+            .x_max = x_max,
+            .y_max = y_max
         };
-        boxes.push_back(box);
+        id++;
+        detections.push_back(det);
     }
     f.close();
-    return boxes;
+    return detections;
 }
 
-vector2d<BoundingBox> load_bounding_boxes(int frame_cnt, std::string tmp_folder) 
+vector2d<Detection> load_detections(int frame_cnt, std::string tmp_folder) 
 {
-    // loads a vector of BoundingBoxes for each frame
-    vector2d<BoundingBox> boxes(frame_cnt, vector<BoundingBox>());
+    // loads a vector of Detections for each frame
+    vector2d<Detection> detections(frame_cnt, vector<Detection>());
     for (int i = 0; i < frame_cnt; i += 1) 
     {
         std::stringstream ss;
         ss << tmp_folder << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
-        boxes[i] = load_frame_bounding_boxes(csv_path);
+        detections[i] = load_frame_detections(csv_path);
     }
-    print_boxes(boxes);
-    return boxes;
+    print_detections(detections);
+    return detections;
 }
 
-int get_max_detections_per_frame(const vector2d<BoundingBox> &boxes)
+int get_max_detections_per_frame(const vector2d<Detection> &detections)
 {
     // checks what is the biggest number of detections in a single frame
     int maxi = 0;
-    for(auto const& b : boxes)
-        if (b.size() > maxi)
-            maxi = b.size();
+    for(auto const& d : detections)
+        if (d.size() > maxi)
+            maxi = d.size();
     std::cout << "Max number of detections per frame is: " << maxi << std::endl;
     return maxi;
 }
 
-auto get_detection_centers_and_histograms(const vector2d<BoundingBox> &boxes,
-                                          int frame_cnt, int segment_cnt, int segment_size,
-                                          const std::string &tmp_folder)
+auto get_detection_histograms(const vector2d<Detection> &detections,
+                              int frame_cnt, int segment_cnt, int segment_size,
+                              const std::string &tmp_folder)
 {
     // vector of Detections for each frame
-    vector2d<Detection> centers(frame_cnt, vector<Detection>());
+    
+    // vector2d<Detection> centers(frame_cnt, vector<Detection>());
+    
     // vector of histogram matrices of detection images for each frame
     // detection of id==0 has its histogram at the start of the vector and so on and on
     vector2d<cv::Mat> histograms(frame_cnt, vector<cv::Mat>()); 
@@ -194,30 +209,18 @@ auto get_detection_centers_and_histograms(const vector2d<BoundingBox> &boxes,
         for (int j = start_frame; j < start_frame + segment_size; j++)
         {
             cv::Mat frame = cv::imread(get_frame_path(j, tmp_folder));
-            int id = 0;
-            for(auto const& d: boxes[j])
+            for(auto const& d: detections[j])
             {
                 int width = d.x_max - d.x_min;
-                int height = d.y_max - d.y_min;
-                int x_center = (d.x_min + d.x_max) / 2;
-                int y_center = (d.y_min + d.y_max) / 2;
-                Detection loc = {
-                    .x = x_center,
-                    .y = y_center,
-                    .id = id
-                };
-                id++;
-                centers[j].push_back(loc);
-                
+                int height = d.y_max - d.y_min;                
                 cv::Mat hist;
-                cv::Mat detection = frame(cv::Rect(x_center, y_center, width, height));
+                cv::Mat detection = frame(cv::Rect(d.x, d.y, width, height));
                 cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
                 histograms[j].push_back(hist); // 
             }
         }
     }
-    print_centers(centers);
-    return std::make_pair(centers, histograms);
+    return histograms;
 }
 
 auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
@@ -319,7 +322,7 @@ double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
     return cost;
 }
 
-vector<Detection> get_detection_path(const vector2d<Detection> &centers,
+vector<Detection> get_detection_path(const vector2d<Detection> &detections,
                                      const vector<int> &detection_ids, int seg_counter)
 {
     vector<Detection> path;
@@ -327,7 +330,7 @@ vector<Detection> get_detection_path(const vector2d<Detection> &centers,
     for (int i = 0; i < detection_ids.size(); i++) // for each detection id == for each frame
     {
         // find Detection with desired id and push it back to the resulting vector
-        for(auto detection: centers[start+i])
+        for(auto detection: detections[start+i])
         {
             if (detection.id == detection_ids[i])
                 path.push_back(detection);
@@ -336,7 +339,7 @@ vector<Detection> get_detection_path(const vector2d<Detection> &centers,
     return path;
 }
 
-double get_motion_cost(const vector2d<Detection> &centers, const vector<Detection> &path,
+double get_motion_cost(const vector<Detection> &path,
                        const vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
@@ -355,15 +358,15 @@ double get_motion_cost(const vector2d<Detection> &centers, const vector<Detectio
     return cost;
 }
 
-void remove_path(vector2d<Detection> &centers, const vector<int> &detection_ids, int seg_counter)
+void remove_path(vector2d<Detection> &detections, const vector<int> &detection_ids, int seg_counter)
 {
     int start = seg_counter * detection_ids.size();
     for(int i = 0; i < detection_ids.size(); i++)
     {
-        for(int j = 0; j < centers[start+i].size(); j++)
+        for(int j = 0; j < detections[start+i].size(); j++)
         {
-            if (centers[start+i][j].id == detection_ids[i])
-                centers[start+i].erase(centers[start+i].begin() + j);
+            if (detections[start+i][j].id == detection_ids[i])
+                detections[start+i].erase(detections[start+i].begin() + j);
         }
     }   
 }
@@ -385,12 +388,12 @@ void remove_path(vector2d<HistInterKernel> &net_cost, const vector<int> &detecti
     }   
 }
 
-bool is_any_frame_without_detections(vector2d<Detection> &centers, int seg_counter, int seg_size)
+bool is_any_frame_without_detections(vector2d<Detection> &detections, int seg_counter, int seg_size)
 {
     int start = seg_counter * seg_size;
     for (int i = 0; i < seg_size; i++)
     {
-        if (centers[start+i].empty())
+        if (detections[start+i].empty())
         {
             std::cout << "Not enough detections in this segment for more paths" << std::endl;
             return true;
@@ -399,7 +402,7 @@ bool is_any_frame_without_detections(vector2d<Detection> &centers, int seg_count
     return false;
 }
 
-auto track(vector2d<Detection> &centers,
+auto track(vector2d<Detection> &detections,
            vector2d<HistInterKernel> &net_cost, 
            int segment_cnt, int segment_size, int max_detections_per_frame)
 {
@@ -408,25 +411,25 @@ auto track(vector2d<Detection> &centers,
     for (int i = 0; i < segment_cnt; i++)
     {
         std::cout << std::endl << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
-        print_detections_left_cnt(centers, i, segment_size);
+        print_detections_left_cnt(detections, i, segment_size);
         int j = 0;
         while (j < max_detections_per_frame)
         {
             print_net_cost(net_cost);
-            if (is_any_frame_without_detections(centers, i, segment_size))
+            if (is_any_frame_without_detections(detections, i, segment_size))
                 break;
             std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
-            auto path = get_detection_path(centers, detection_ids, i);
+            auto path = get_detection_path(detections, detection_ids, i);
 
             auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-            auto motion_cost = get_motion_cost(centers, path, detection_ids, i);
+            auto motion_cost = get_motion_cost(path, detection_ids, i);
 
             tracklets[i][j] = path;
-            remove_path(centers, detection_ids, i);
+            remove_path(detections, detection_ids, i);
             remove_path(net_cost, detection_ids, i);
-            print_detections_left_cnt(centers, i, segment_size);
-            print_detections_left_ids(centers, i, segment_size);
+            print_detections_left_cnt(detections, i, segment_size);
+            print_detections_left_ids(detections, i, segment_size);
             j++;
         }
     }
@@ -453,20 +456,20 @@ int main(int argc, char **argv) {
     auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
-    auto boxes = load_bounding_boxes(frame_cnt, tmp_folder);
-    auto max_detections_per_frame = get_max_detections_per_frame(boxes);
-    auto colors = get_colors(max_detections_per_frame);
+    auto detections = load_detections(frame_cnt, tmp_folder);
+    // auto max_detections_per_frame = get_max_detections_per_frame(detections);
+    // auto colors = get_colors(max_detections_per_frame);
     
     
-    auto cah = get_detection_centers_and_histograms(boxes, 
-                                                    frame_cnt, 
-                                                    segment_cnt, segment_size,
-                                                    tmp_folder);
-    auto centers = cah.first;
-    auto histograms = cah.second;
-    auto net_cost = get_net_cost(frame_cnt, histograms);
+    // auto histograms = get_detection_histograms(detections, 
+    //                                            frame_cnt, 
+    //                                            segment_cnt, segment_size,
+    //                                            tmp_folder);
+    // auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    auto tracklets = track(centers, net_cost, segment_cnt, segment_size, max_detections_per_frame);
+    // auto tracklets = track(detections, net_cost, segment_cnt, segment_size, max_detections_per_frame);
+    // draw detections on frames
+    // create a video out of tmp frames
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();

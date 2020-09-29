@@ -35,7 +35,6 @@ void print_parameters(int segment_size, std::string in_video, std::string out_vi
                       std::string detector, std::string detector_cfg, std::string tmp_folder);
 void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
 void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
-void print_boxes(const vector2d<BoundingBox> &boxes);
-void print_centers(const vector2d<Detection> &centers);
+void print_detections(const vector2d<Detection> &detections);
 void print_net_cost(const vector2d<HistInterKernel> &net_cost);
 void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt);

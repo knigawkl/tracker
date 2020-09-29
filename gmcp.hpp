@@ -11,19 +11,11 @@ using vector3d = std::vector<std::vector<std::vector<T>>>;
 
 struct Detection
 {
-    int x, y, id;
+    int x, y, id, x_min, y_min, x_max, y_max;
     void print() const
     {
-        std::cout << "x: " << x << ", y: " << y << ", id: " << id << std::endl;
-    }
-};
-
-struct BoundingBox
-{
-    int x_min, y_min, x_max, y_max;
-    void print() const
-    {
-        std::cout << "x_min: " << x_min << ", y_min: " << y_min 
+        std::cout << "x: " << x << ", y: " << y << ", id: " << id
+                  << ", x_min: " << x_min << ", y_min: " << y_min 
                   << ", x_max: " << x_max << ", y_max: " << y_max << std::endl;
     }
 };
