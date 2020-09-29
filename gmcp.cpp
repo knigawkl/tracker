@@ -350,11 +350,10 @@ std::vector<Detection> get_detection_path(const std::vector<std::vector<Detectio
     return path;
 }
 
-double get_motion_cost(const std::vector<std::vector<Detection>> &centers,
+double get_motion_cost(const std::vector<std::vector<Detection>> &centers, const std::vector<Detection> &path,
                        const std::vector<int> &detection_ids, int seg_counter)
 {
     double cost = 0;
-    auto path = get_detection_path(centers, detection_ids, seg_counter);
     // print_detection_path(path);
 
     std::vector<int> x_diffs, y_diffs, sums;
@@ -433,7 +432,9 @@ int main(int argc, char **argv) {
     const std::string tmp_video = tmp_folder + "/input.mp4";
     prepare_tmp_video(in_cap, frame_cnt, tmp_folder, in_video, tmp_video);
 
+    auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
+    auto detect_end = std::chrono::steady_clock::now();
     auto boxes = load_bounding_boxes(frame_cnt, tmp_folder);
     auto max_detections_per_frame = get_max_detections_per_frame(boxes);
     auto colors = get_colors(max_detections_per_frame);
@@ -449,7 +450,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < segment_cnt; i++)
     {
-        std::cout << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
+        std::cout << std::endl << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
         print_detections_left_cnt(centers, i, segment_size);
         int j = 0;
         while (j < max_detections_per_frame)
@@ -459,9 +460,10 @@ int main(int argc, char **argv) {
                 break;
             std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
             auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
+            auto path = get_detection_path(centers, detection_ids, i);
 
             auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-            auto motion_cost = get_motion_cost(centers, detection_ids, i);
+            auto motion_cost = get_motion_cost(centers, path, detection_ids, i);
 
             remove_path(centers, detection_ids, i);
             remove_path(net_cost, detection_ids, i);
@@ -474,5 +476,6 @@ int main(int argc, char **argv) {
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
+    print_detect_time(detect_begin, detect_end);
     return 0;
 }

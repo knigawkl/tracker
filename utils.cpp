@@ -118,6 +118,13 @@ void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::s
             << "[s])" << std::endl;
 }
 
+void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
+{
+    std::cout << "Detection took = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
+            << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
+            << "[s])" << std::endl;
+}
+
 void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes)
 {
     for (int i = 0; i < boxes.size(); i++)
