@@ -442,13 +442,13 @@ auto track(vector2d<Detection> &detections,
 
 // }
 
-void draw_rectangle(cv::Mat img, const Detection &d)
+void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder)
 {
-    cv::Rect rect( );  // store detection width and height ()
-
-    //Rect r=Rect(10,20,40,60);
-    //create a Rect with top-left vertex at (10,20), of width 40 and height 60 pixels.
-    //cv::rectangle(img, );
+    auto path = get_frame_path(frame, tmp_folder);
+    cv::Mat img = cv::imread(path);
+    cv::Rect rect(d.x_min, d.y_max, d.width, d.height);
+    cv::rectangle(img, rect, color, 30); // the last param is thickness
+    cv::imwrite(path, img);
 }
 
 void draw_bounding_boxes()
@@ -496,6 +496,9 @@ int main(int argc, char **argv) {
     // auto trajectories = merge_tracklets(tracklets);
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
+
+    detections[0].back().print();
+    draw_rectangle(detections[0].back(), cv::Scalar(255,0,0), 0, tmp_folder);
 
     // clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
