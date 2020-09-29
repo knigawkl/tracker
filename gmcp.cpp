@@ -444,10 +444,11 @@ auto track(vector2d<Detection> &detections,
 
 void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder)
 {
+    constexpr int const line_thickness = 2; 
     auto path = get_frame_path(frame, tmp_folder);
     cv::Mat img = cv::imread(path);
-    cv::Rect rect(d.x_min, d.y_max, d.width, d.height);
-    cv::rectangle(img, rect, color, 30); // the last param is thickness
+    cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
+    cv::rectangle(img, rect, color, line_thickness);
     cv::imwrite(path, img);
 }
 
@@ -497,10 +498,7 @@ int main(int argc, char **argv) {
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
 
-    detections[0].back().print();
-    draw_rectangle(detections[0].back(), cv::Scalar(255,0,0), 0, tmp_folder);
-
-    // clear_tmp(tmp_folder);
+    clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     print_detect_time(detect_begin, detect_end);
