@@ -37,3 +37,4 @@ void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::s
 void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
 void print_boxes(const std::vector<std::vector<BoundingBox>> &boxes);
 void print_centers(const std::vector<std::vector<Detection>> &centers);
+void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost);

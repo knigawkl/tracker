@@ -148,3 +148,16 @@ void print_centers(const std::vector<std::vector<Detection>> &centers)
         }
     }
 }
+
+void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
+{
+    // for debug purposes only
+    for(auto frame: net_cost)
+    {
+        std::cout << "========== net cost frame ==========" << std::endl;
+        for (auto hik: frame)
+            hik.print();
+    }
+
+    std::cout << std::endl;
+}

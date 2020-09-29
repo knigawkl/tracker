@@ -220,19 +220,6 @@ auto get_detection_centers_and_histograms(const std::vector<std::vector<Bounding
     return std::make_pair(centers, histograms);
 }
 
-void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
-{
-    // for debug purposes only
-    for(auto frame: net_cost)
-    {
-        std::cout << "========== net cost frame ==========" << std::endl;
-        for (auto hik: frame)
-            hik.print();
-    }
-
-    std::cout << std::endl;
-}
-
 auto get_net_cost(int frame_cnt, const std::vector<std::vector<cv::Mat>> &histograms)
 {  
     using namespace std;
@@ -416,6 +403,36 @@ bool is_empty(const std::vector<std::vector<Detection>> &centers, int seg_counte
     return result;
 }
 
+void track(std::vector<std::vector<Detection>> &centers, 
+           std::vector<std::vector<HistInterKernel>> &net_cost, 
+           int segment_cnt, int segment_size, int max_detections_per_frame)
+{
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << std::endl << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
+        print_detections_left_cnt(centers, i, segment_size);
+        int j = 0;
+        while (j < max_detections_per_frame)
+        {
+            print_net_cost(net_cost);
+            if (is_empty(centers, i, segment_size))
+                break;
+            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
+            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
+            auto path = get_detection_path(centers, detection_ids, i);
+
+            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
+            auto motion_cost = get_motion_cost(centers, path, detection_ids, i);
+
+            remove_path(centers, detection_ids, i);
+            remove_path(net_cost, detection_ids, i);
+            print_detections_left_cnt(centers, i, segment_size);
+            print_detections_left_ids(centers, i, segment_size);
+            j++;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -448,30 +465,7 @@ int main(int argc, char **argv) {
     auto histograms = cah.second;
     auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    for (int i = 0; i < segment_cnt; i++)
-    {
-        std::cout << std::endl << "Tracking in segment " << i+1 << "/" << segment_cnt << std::endl;
-        print_detections_left_cnt(centers, i, segment_size);
-        int j = 0;
-        while (j < max_detections_per_frame)
-        {
-            print_net_cost(net_cost);
-            if (is_empty(centers, i, segment_size))
-                break;
-            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
-            auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
-            auto path = get_detection_path(centers, detection_ids, i);
-
-            auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-            auto motion_cost = get_motion_cost(centers, path, detection_ids, i);
-
-            remove_path(centers, detection_ids, i);
-            remove_path(net_cost, detection_ids, i);
-            print_detections_left_cnt(centers, i, segment_size);
-            print_detections_left_ids(centers, i, segment_size);
-            j++;
-        }
-    }
+    track(centers, net_cost, segment_cnt, segment_size, max_detections_per_frame);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
