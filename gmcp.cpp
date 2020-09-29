@@ -192,10 +192,6 @@ auto get_detection_histograms(const vector2d<Detection> &detections,
                               int frame_cnt, int segment_cnt, int segment_size,
                               const std::string &tmp_folder)
 {
-    // vector of Detections for each frame
-    
-    // vector2d<Detection> centers(frame_cnt, vector<Detection>());
-    
     // vector of histogram matrices of detection images for each frame
     // detection of id==0 has its histogram at the start of the vector and so on and on
     vector2d<cv::Mat> histograms(frame_cnt, vector<cv::Mat>()); 
@@ -406,7 +402,8 @@ auto track(vector2d<Detection> &detections,
            vector2d<HistInterKernel> &net_cost, 
            int segment_cnt, int segment_size, int max_detections_per_frame)
 {
-    vector3d<Detection> tracklets(segment_cnt, vector2d<Detection>(max_detections_per_frame, vector<Detection>()));
+    vector3d<Detection> tracklets(segment_cnt, 
+                                  vector2d<Detection>(max_detections_per_frame, vector<Detection>()));
 
     for (int i = 0; i < segment_cnt; i++)
     {
@@ -418,7 +415,8 @@ auto track(vector2d<Detection> &detections,
             print_net_cost(net_cost);
             if (is_any_frame_without_detections(detections, i, segment_size))
                 break;
-            std::cout << std::endl << "Tracking object number " << j+1 << "/" << max_detections_per_frame << std::endl;
+            std::cout << std::endl << "Tracking object number " << j+1 
+                      << "/" << max_detections_per_frame << std::endl;
             auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
             auto path = get_detection_path(detections, detection_ids, i);
 
@@ -457,17 +455,16 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
     auto detections = load_detections(frame_cnt, tmp_folder);
-    // auto max_detections_per_frame = get_max_detections_per_frame(detections);
-    // auto colors = get_colors(max_detections_per_frame);
+    auto max_detections_per_frame = get_max_detections_per_frame(detections);
+    auto colors = get_colors(max_detections_per_frame);
     
-    
-    // auto histograms = get_detection_histograms(detections, 
-    //                                            frame_cnt, 
-    //                                            segment_cnt, segment_size,
-    //                                            tmp_folder);
-    // auto net_cost = get_net_cost(frame_cnt, histograms);
+    auto histograms = get_detection_histograms(detections, 
+                                               frame_cnt, 
+                                               segment_cnt, segment_size,
+                                               tmp_folder);
+    auto net_cost = get_net_cost(frame_cnt, histograms);
 
-    // auto tracklets = track(detections, net_cost, segment_cnt, segment_size, max_detections_per_frame);
+    auto tracklets = track(detections, net_cost, segment_cnt, segment_size, max_detections_per_frame);
     // draw detections on frames
     // create a video out of tmp frames
 
