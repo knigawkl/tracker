@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "utils.hpp"
+#include "tracklet.hpp"
 
 void make_tmp_dirs(std::string tmp_folder) 
 {
@@ -155,7 +156,7 @@ void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
     std::cout << std::endl;
 }
 
-void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt)
+void print_tracklets(const vector2d<Tracklet> &tracklets, int segment_cnt)
 {
     std::cout << std::endl;
     for (int i = 0; i < segment_cnt; i++)
@@ -164,7 +165,7 @@ void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt)
         for (int j = 0; j < tracklets[i].size(); j++)
         {
             std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
-            print_detection_path(tracklets[i][j]);
+            print_detection_path(tracklets[i][j].detections);
         }
     }
 }

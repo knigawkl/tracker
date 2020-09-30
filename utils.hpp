@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "gmcp.hpp"
+#include "tracklet.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -28,5 +29,5 @@ void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::s
 void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
 void print_detections(const vector2d<Detection> &detections);
 void print_net_cost(const vector2d<HistInterKernel> &net_cost);
-void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt);
+void print_tracklets(const vector2d<Tracklet> &tracklets, int segment_cnt);
 void print_tracklet_center(const Location &center, int segment_ctr, int tracklet_ctr);

@@ -18,6 +18,7 @@
 #include "gmcp.hpp"
 #include "utils.hpp"
 #include "video.hpp"
+#include "tracklet.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -409,11 +410,11 @@ bool is_any_frame_without_detections(vector2d<Detection> &detections, int seg_co
 }
 
 auto track(vector2d<Detection> &detections,
-           vector2d<HistInterKernel> &net_cost, 
+           vector2d<HistInterKernel> &net_cost,
+           const vector2d<cv::Mat> &histograms, 
            int segment_cnt, int segment_size, int max_detections_per_frame)
 {
-    vector3d<Detection> tracklets(segment_cnt, 
-                                  vector2d<Detection>(max_detections_per_frame, vector<Detection>()));
+    vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
 
     for (int i = 0; i < segment_cnt; i++)
     {
@@ -433,7 +434,10 @@ auto track(vector2d<Detection> &detections,
             auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
             auto motion_cost = get_motion_cost(path, detection_ids, i);
 
-            tracklets[i][j] = path;
+            // there the best possible path should be chosen, based on both app and motion cost
+            // current solution is just too greedy
+
+            tracklets[i].push_back(Tracklet(path, histograms, i, segment_size));
             remove_path(detections, detection_ids, i);
             remove_path(net_cost, detection_ids, i);
             print_detections_left_cnt(detections, i, segment_size);
@@ -445,76 +449,32 @@ auto track(vector2d<Detection> &detections,
     return tracklets;
 }
 
-vector<int> get_detection_ids(const vector<Detection> &tracklet)
-{
-    vector<int> detection_ids;
-    for (auto detection: tracklet)
-    {
-        detection_ids.push_back(detection.id);
-    }
-    return detection_ids;
-}
-
-cv::Mat get_tracklet_histogram(const vector<Detection> &tracklet, const vector2d<cv::Mat> &histograms, 
-                               int seg_ctr, int seg_size)
-{
-    // tracklet's appearance feature is the mean of color histograms of detections from the tracklet
-    vector<int> detection_ids = get_detection_ids(tracklet);
-
-    int start = seg_ctr * seg_size;
-    double anti_overflow_coeff = 1 / seg_size; 
-    auto tracklet_histogram = histograms[start][detection_ids[0]] * anti_overflow_coeff;
-    
-    for (int i = 1; i < detection_ids.size(); i++)
-        tracklet_histogram += histograms[start+i][detection_ids[i]] * anti_overflow_coeff;
-    return tracklet_histogram;
-}
-
 // double get_tracklet_appearance_cost(const vector<Detection> &tracklet, const vector2d<cv::Mat> &histograms, 
 //                                     int seg_ctr, int seg_size)
 // {
     
 // }
 
-Location get_tracklet_middle_point(const vector<Detection> &tracklet)
-{
-    // spatial location of a tracklet is defined as the middle point of the tracklet
-    int x_sum = 0;
-    int y_sum = 0;
-    for (auto detection: tracklet)
-    {
-        x_sum += detection.x;
-        y_sum += detection.y;
-    }
-    int x_center = x_sum / tracklet.size();
-    int y_center = y_sum / tracklet.size();
-    Location middle_point = {
-        .x = x_center,
-        .y = y_center
-    };
-    return middle_point; 
-}
-
-void merge_tracklets(const vector3d<Detection> &tracklets, const vector2d<cv::Mat> &histograms, int seg_size)
-{
-    // tracklets: for every segment, for every tracklet in the segment, stores a vector of detections
-    // for (auto segment: tracklets)
-    for (int segment_ctr = 0; segment_ctr < tracklets.size(); segment_ctr++)
-    {
-        // for (auto tracklet: segment)
-        for (int tracklet_ctr = 0; tracklet_ctr < tracklets[segment_ctr].size(); tracklet_ctr++)
-        {
-            if (tracklets[segment_ctr][tracklet_ctr].size())
-            {
-                Location tracklet_center = get_tracklet_middle_point(tracklets[segment_ctr][tracklet_ctr]);
-                print_tracklet_center(tracklet_center, segment_ctr, tracklet_ctr);
-                cv::Mat tracklet_histogram = get_tracklet_histogram(tracklets[segment_ctr][tracklet_ctr], 
-                                                                    histograms,
-                                                                    segment_ctr, seg_size);
-            }
-        }
-    }
-}
+// void merge_tracklets(const vector3d<Detection> &tracklets, const vector2d<cv::Mat> &histograms, int seg_size)
+// {
+//     // tracklets: for every segment, for every tracklet in the segment, stores a vector of detections
+//     // for (auto segment: tracklets)
+//     for (int segment_ctr = 0; segment_ctr < tracklets.size(); segment_ctr++)
+//     {
+//         // for (auto tracklet: segment)
+//         for (int tracklet_ctr = 0; tracklet_ctr < tracklets[segment_ctr].size(); tracklet_ctr++)
+//         {
+//             if (tracklets[segment_ctr][tracklet_ctr].size())
+//             {
+//                 Location tracklet_center = get_tracklet_middle_point(tracklets[segment_ctr][tracklet_ctr]);
+//                 print_tracklet_center(tracklet_center, segment_ctr, tracklet_ctr);
+//                 cv::Mat tracklet_histogram = get_tracklet_histogram(tracklets[segment_ctr][tracklet_ctr], 
+//                                                                     histograms,
+//                                                                     segment_ctr, seg_size);
+//             }
+//         }
+//     }
+// }
 
 void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder)
 {
@@ -568,9 +528,9 @@ int main(int argc, char **argv) {
                                                             tmp_folder);
     vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms);
 
-    vector3d<Detection> tracklets = track(detections, net_cost, 
+    vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
                                           segment_cnt, segment_size, max_detections_per_frame);
-    /*auto trajectories =*/ merge_tracklets(tracklets, histograms, segment_size);
+    // /*auto trajectories =*/ merge_tracklets(tracklets, histograms, segment_size);
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
 
