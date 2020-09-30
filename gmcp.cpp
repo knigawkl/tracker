@@ -241,8 +241,8 @@ auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
                                                                        histograms[i+1][l],
                                                                        3); // CV_COMP_INTERSECT
                 HistInterKernel hik = {
-                    .detection_id1 = k,
-                    .detection_id2 = l,
+                    .id1 = k,
+                    .id2 = l,
                     .value = histogram_intersection_kernel
                 };
                 net_cost[i].push_back(hik);
@@ -254,8 +254,8 @@ HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
-        .detection_id1 = -1,
-        .detection_id2 = -1,
+        .id1 = -1,
+        .id2 = -1,
         .value = maxi
     };
     for (auto hik: hiks)
@@ -268,17 +268,17 @@ HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
     return mini;
 }
 
-HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int detection_id1)
+HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int id1)
 {
     double maxi = std::numeric_limits<double>::max();
     HistInterKernel mini = {
-        .detection_id1 = -1,
-        .detection_id2 = -1,
+        .id1 = -1,
+        .id2 = -1,
         .value = maxi
     };
     for (auto hik: hiks)
     {   
-        if (hik.detection_id1 == detection_id1 && hik.value < mini.value)
+        if (hik.id1 == id1 && hik.value < mini.value)
         {
             mini = hik;
         }
@@ -295,13 +295,13 @@ vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net_cost
 
     int start = seg_counter * seg_size;
     auto first_hik = get_cheapest(net_cost[start]);
-    detection_ids.push_back(first_hik.detection_id1);
-    detection_ids.push_back(first_hik.detection_id2);
+    detection_ids.push_back(first_hik.id1);
+    detection_ids.push_back(first_hik.id2);
 
     for (int i = 1; i < seg_size - 1; i++)
     {
         auto hik = get_cheapest(net_cost[start+i], detection_ids.back());
-        detection_ids.push_back(hik.detection_id2);
+        detection_ids.push_back(hik.id2);
     }
     return detection_ids;
 }
@@ -316,7 +316,7 @@ double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
     {
         for (auto hik: net_cost[start+i])
         {
-            if (hik.detection_id1 == detection_ids[i] && hik.detection_id2 == detection_ids[i+1])
+            if (hik.id1 == detection_ids[i] && hik.id2 == detection_ids[i+1])
             {
                 cost += hik.value;
                 component_counter++;
@@ -387,8 +387,8 @@ void remove_path(vector2d<HistInterKernel> &net_cost, const vector<int> &detecti
         vector<HistInterKernel> tmp;
         for (int j = 0; j < net_cost[start+i].size(); j++)
         {
-            if (net_cost[start+i][j].detection_id1 != detection_ids[i] // remove hiks starting at used detection
-                && net_cost[start+i][j].detection_id2 != detection_ids[i+1]) // remove hiks leading to used detection
+            if (net_cost[start+i][j].id1 != detection_ids[i] // remove hiks starting at used detection
+                && net_cost[start+i][j].id2 != detection_ids[i+1]) // remove hiks leading to used detection
                 tmp.push_back(net_cost[start+i][j]);
         }
         net_cost[start+i] = tmp;
@@ -437,7 +437,7 @@ auto track(vector2d<Detection> &detections,
             // there the best possible path should be chosen, based on both app and motion cost
             // current solution is just too greedy
 
-            tracklets[i].push_back(Tracklet(path, histograms, i, segment_size));
+            tracklets[i].push_back(Tracklet(path, histograms, i, segment_size, j));
             remove_path(detections, detection_ids, i);
             remove_path(net_cost, detection_ids, i);
             print_detections_left_cnt(detections, i, segment_size);

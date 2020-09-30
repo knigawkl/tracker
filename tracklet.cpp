@@ -44,7 +44,10 @@ vector<int> Tracklet::get_detection_ids() const
     return detection_ids;
 }
 
-void Tracklet::calculate_net_cost()
+void Tracklet::calculate_net_cost(vector<Tracklet> next_segment_tracks)
 {
-
+    for (auto track: next_segment_tracks)
+    {
+        ;
+    }
 }
