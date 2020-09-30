@@ -422,7 +422,7 @@ auto track(vector2d<Detection> &detections,
         int j = 0;
         while (j < max_detections_per_frame)
         {
-            print_net_cost(net_cost);
+            // print_net_cost(net_cost);
             std::cout << std::endl << "Tracking object number " << j+1 
                       << "/" << max_detections_per_frame << std::endl;
             if (is_any_frame_without_detections(detections, i, segment_size))
