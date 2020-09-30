@@ -79,7 +79,7 @@ void print_detection_path(const std::vector<Detection> &path)
         }
         std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
     } else {
-        std::cout << "Empty detection path" << std::endl;
+        std::cout << "Not enough detections to form a tracklet" << std::endl;
     }
 }
 
@@ -133,7 +133,7 @@ void print_detections(const vector2d<Detection> &detections)
 {
     for (int i = 0; i < detections.size(); i++)
     {
-        std::cout << "Detections in frame " << i << std::endl;
+        std::cout << detections[i].size() << " detections in frame " << i << std::endl;
         for (int j = 0; j < detections[i].size(); j++)
         {
             detections[i][j].print();

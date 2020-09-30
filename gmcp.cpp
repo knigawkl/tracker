@@ -116,7 +116,7 @@ void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::
     system(detect_command.c_str());
 }
 
-vector<Detection> load_frame_detections(std::string csv_file) 
+vector<Detection> load_frame_detections(std::string csv_file, int video_w, int video_h) 
 {
     vector<Detection> detections;
     std::ifstream f(csv_file);
@@ -144,6 +144,14 @@ vector<Detection> load_frame_detections(std::string csv_file)
         y_min = coords[1];
         x_max = coords[2];
         y_max = coords[3];
+        if (x_min < 0)
+            x_min = 0;
+        if (y_min < 0)
+            y_min = 0;
+        if (x_max > video_w)
+            x_max = video_w;
+        if (y_max > video_h)
+            y_max = video_h;         
         x_center = (x_min + x_max) / 2;
         y_center = (y_min + y_max) / 2;
         height = y_max - y_min;
@@ -166,7 +174,7 @@ vector<Detection> load_frame_detections(std::string csv_file)
     return detections;
 }
 
-vector2d<Detection> load_detections(int frame_cnt, std::string tmp_folder) 
+vector2d<Detection> load_detections(int frame_cnt, std::string tmp_folder, int video_w, int video_h) 
 {
     // loads a vector of Detections for each frame
     vector2d<Detection> detections(frame_cnt, vector<Detection>());
@@ -175,7 +183,7 @@ vector2d<Detection> load_detections(int frame_cnt, std::string tmp_folder)
         std::stringstream ss;
         ss << tmp_folder << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
-        detections[i] = load_frame_detections(csv_path);
+        detections[i] = load_frame_detections(csv_path, video_w, video_h);
     }
     print_detections(detections);
     return detections;
@@ -212,7 +220,7 @@ auto get_detection_histograms(const vector2d<Detection> &detections,
             for (auto const& d: detections[j])
             {
                 cv::Mat hist;
-                cv::Mat detection = frame(cv::Rect(d.x, d.y, d.width, d.height));
+                cv::Mat detection = frame(cv::Rect(d.x_min, d.y_min, d.width, d.height));
                 cv::calcHist(&detection, 1, channels, cv::Mat(), hist, 3, histSize, ranges);
                 histograms[j].push_back(hist); // 
             }
@@ -474,6 +482,8 @@ int main(int argc, char **argv) {
     make_tmp_dirs(tmp_folder);
 
     cv::VideoCapture in_cap(in_video);
+    int video_w = in_cap.get(cv::CAP_PROP_FRAME_WIDTH);
+    int video_h = in_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
     const int segment_cnt = frame_cnt / segment_size;
     const std::string tmp_video = tmp_folder + "/input.mp4";
@@ -482,7 +492,7 @@ int main(int argc, char **argv) {
     auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
-    vector2d<Detection> detections = load_detections(frame_cnt, tmp_folder);
+    vector2d<Detection> detections = load_detections(frame_cnt, tmp_folder, video_w, video_h);
     int max_detections_per_frame = get_max_detections_per_frame(detections);
     auto colors = get_colors(max_detections_per_frame);
     
