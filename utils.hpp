@@ -29,3 +29,4 @@ void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono:
 void print_detections(const vector2d<Detection> &detections);
 void print_net_cost(const vector2d<HistInterKernel> &net_cost);
 void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt);
+void print_tracklet_center(const Location &center, int segment_ctr, int tracklet_ctr);

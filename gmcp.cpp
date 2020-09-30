@@ -445,10 +445,49 @@ auto track(vector2d<Detection> &detections,
     return tracklets;
 }
 
-// vector2d<> merge_tracklets(vector3d<Detection> tracklets)
-// {
+double get_tracklet_appearance_cost(const vector<Detection> &tracklet, const vector2d<cv::Mat> &histograms)
+{
+    // tracklet's appearance feature is the mean of color histograms of detections from the tracklet
+    
+}
 
-// }
+Location get_tracklet_middle_point(const vector<Detection> &tracklet)
+{
+    // spatial location of a tracklet is defined as the middle point of the tracklet
+    int x_sum = 0;
+    int y_sum = 0;
+    for (auto detection: tracklet)
+    {
+        x_sum += detection.x;
+        y_sum += detection.y;
+    }
+    int x_center = x_sum / tracklet.size();
+    int y_center = y_sum / tracklet.size();
+    Location middle_point = {
+        .x = x_center,
+        .y = y_center
+    };
+    return middle_point; 
+}
+
+void merge_tracklets(const vector3d<Detection> &tracklets, const vector2d<cv::Mat> &histograms)
+{
+    // tracklets: for every segment, for every tracklet in the segment, stores a vector of detections
+    // for (auto segment: tracklets)
+    for (int segment_ctr = 0; segment_ctr < tracklets.size(); segment_ctr++)
+    {
+        // for (auto tracklet: segment)
+        for (int tracklet_ctr = 0; tracklet_ctr < tracklets[segment_ctr].size(); tracklet_ctr++)
+        {
+            if (tracklets[segment_ctr][tracklet_ctr].size())
+            {
+                Location tracklet_center = get_tracklet_middle_point(tracklets[segment_ctr][tracklet_ctr]);
+                print_tracklet_center(tracklet_center, segment_ctr, tracklet_ctr);
+                double tracklet_app_cost = get_tracklet_appearance_cost(tracklets[segment_ctr][tracklet_ctr], histograms);
+            }
+        }
+    }
+}
 
 void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder)
 {
@@ -504,7 +543,7 @@ int main(int argc, char **argv) {
 
     vector3d<Detection> tracklets = track(detections, net_cost, 
                                           segment_cnt, segment_size, max_detections_per_frame);
-    // auto trajectories = merge_tracklets(tracklets);
+    /*auto trajectories =*/ merge_tracklets(tracklets, histograms);
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
 

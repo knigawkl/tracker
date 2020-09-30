@@ -32,3 +32,12 @@ struct HistInterKernel
                   << ", value: " << value << std::endl;
     }
 };
+
+struct Location
+{
+    int x, y;
+    void print() const
+    {
+        std::cout << "x: " << x << ", y: " << y << std::endl;
+    }
+};

@@ -168,3 +168,9 @@ void print_tracklets(const vector3d<Detection> &tracklets, int segment_cnt)
         }
     }
 }
+
+void print_tracklet_center(const Location &center, int segment_ctr, int tracklet_ctr)
+{
+    std::cout << "Segment: " << segment_ctr+1 << ", tracklet: " << tracklet_ctr+1 << ", center: ";
+    center.print();
+}
