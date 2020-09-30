@@ -390,7 +390,7 @@ void remove_path(vector2d<HistInterKernel> &net_cost, const vector<int> &detecti
                 && net_cost[start+i][j].detection_id2 != detection_ids[i+1]) // remove hiks leading to used detection
                 tmp.push_back(net_cost[start+i][j]);
         }
-        net_cost[i] = tmp;
+        net_cost[start+i] = tmp;
     }   
 }
 
@@ -423,10 +423,10 @@ auto track(vector2d<Detection> &detections,
         while (j < max_detections_per_frame)
         {
             print_net_cost(net_cost);
-            if (is_any_frame_without_detections(detections, i, segment_size))
-                break;
             std::cout << std::endl << "Tracking object number " << j+1 
                       << "/" << max_detections_per_frame << std::endl;
+            if (is_any_frame_without_detections(detections, i, segment_size))
+                break;
             auto detection_ids = get_initial_detection_path(net_cost, segment_size, i);
             auto path = get_detection_path(detections, detection_ids, i);
 

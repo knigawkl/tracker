@@ -144,10 +144,11 @@ void print_detections(const vector2d<Detection> &detections)
 void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
 {
     // for debug purposes only
-    for (auto frame: net_cost)
+    // for (auto frame: net_cost)
+    for (int i = 0; i < net_cost.size(); i++)
     {
-        std::cout << "========== net cost frame ==========" << std::endl;
-        for (auto hik: frame)
+        std::cout << "========== net cost frame " << i << " ==========" << std::endl;
+        for (auto hik: net_cost[i])
             hik.print();
     }
 
