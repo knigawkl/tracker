@@ -56,6 +56,14 @@ std::vector<cv::Scalar> get_colors(int vec_len)
     return colors;
 }
 
+std::string get_frame_path(int frame, std::string tmp_folder)
+{
+    std::stringstream ss;
+    ss << tmp_folder << "/img/frame" << std::to_string(frame) << ".jpeg";
+    std::string path = ss.str();
+    return path;
+}
+
 // all printing functions here
 void print_usage_info()
 {

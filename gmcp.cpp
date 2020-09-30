@@ -94,14 +94,6 @@ void verify_parameters(int segment_size, std::string in_video, std::string out_v
     }
 }
 
-std::string get_frame_path(int frame, std::string tmp_folder)
-{
-    std::stringstream ss;
-    ss << tmp_folder << "/img/frame" << std::to_string(frame) << ".jpeg";
-    std::string path = ss.str();
-    return path;
-}
-
 void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::string video, std::string tmp_folder) 
 {
     // initiates object detections on selected frames of the trimmed video
@@ -347,11 +339,11 @@ vector<Detection> get_detection_path(const vector2d<Detection> &detections,
 }
 
 double get_motion_cost(const vector<Detection> &path,
-                       const vector<int> &detection_ids, int seg_counter)
+                       int seg_size, int seg_counter)
 {
     double cost = 0;
     vector<int> x_diffs, y_diffs, sums;
-    int diff_size = detection_ids.size() - 1;
+    int diff_size = seg_size - 1;
     sums.reserve(diff_size);
     for (int i = 0; i < diff_size; i++)
     {
@@ -432,7 +424,7 @@ auto track(vector2d<Detection> &detections,
             auto path = get_detection_path(detections, detection_ids, i);
 
             auto app_cost = get_appearance_cost(net_cost, detection_ids, i);
-            auto motion_cost = get_motion_cost(path, detection_ids, i);
+            auto motion_cost = get_motion_cost(path, segment_size, i);
 
             // there the best possible path should be chosen, based on both app and motion cost
             // current solution is just too greedy
@@ -449,34 +441,7 @@ auto track(vector2d<Detection> &detections,
     return tracklets;
 }
 
-// double get_tracklet_appearance_cost(const vector<Detection> &tracklet, const vector2d<cv::Mat> &histograms, 
-//                                     int seg_ctr, int seg_size)
-// {
-    
-// }
-
-// void merge_tracklets(const vector3d<Detection> &tracklets, const vector2d<cv::Mat> &histograms, int seg_size)
-// {
-//     // tracklets: for every segment, for every tracklet in the segment, stores a vector of detections
-//     // for (auto segment: tracklets)
-//     for (int segment_ctr = 0; segment_ctr < tracklets.size(); segment_ctr++)
-//     {
-//         // for (auto tracklet: segment)
-//         for (int tracklet_ctr = 0; tracklet_ctr < tracklets[segment_ctr].size(); tracklet_ctr++)
-//         {
-//             if (tracklets[segment_ctr][tracklet_ctr].size())
-//             {
-//                 Location tracklet_center = get_tracklet_middle_point(tracklets[segment_ctr][tracklet_ctr]);
-//                 print_tracklet_center(tracklet_center, segment_ctr, tracklet_ctr);
-//                 cv::Mat tracklet_histogram = get_tracklet_histogram(tracklets[segment_ctr][tracklet_ctr], 
-//                                                                     histograms,
-//                                                                     segment_ctr, seg_size);
-//             }
-//         }
-//     }
-// }
-
-void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder)
+void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder) // todo: in order to be more generic, this should take path to the image as param
 {
     constexpr int const line_thickness = 2; 
     auto path = get_frame_path(frame, tmp_folder);

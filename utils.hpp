@@ -10,14 +10,12 @@
 #include <opencv2/opencv.hpp>
 
 void make_tmp_dirs(std::string tmp_folder);
-
 void clear_tmp(std::string tmp_folder);
-
 void mv(std::string what, std::string where);
-
 void cp(std::string what, std::string where);
 
 std::vector<cv::Scalar> get_colors(int vec_len);
+std::string get_frame_path(int frame, std::string tmp_folder);
 
 void print_usage_info();
 void print_detection_path(const std::vector<Detection> &path);
