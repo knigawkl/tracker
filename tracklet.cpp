@@ -26,7 +26,7 @@ void Tracklet::set_histogram(const vector2d<cv::Mat> &histograms,
     vector<int> detection_ids = get_detection_ids();
 
     int start = seg_ctr * seg_size;
-    double anti_overflow_coeff = 1 / seg_size; 
+    double anti_overflow_coeff = 1.0 / seg_size;
     auto tracklet_histogram = histograms[start][detection_ids[0]] * anti_overflow_coeff;
     
     for (int i = 1; i < detection_ids.size(); i++)
