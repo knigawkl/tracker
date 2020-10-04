@@ -483,9 +483,13 @@ void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
     }
 }
 
-void merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
+vector2d<Detection> merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
 {
     set_tracklets_net_costs(tracklets);
+    print_tracklets_net_costs(tracklets, segment_cnt);
+
+    vector2d<Detection> trajectories;
+    return trajectories;
 }
 
 void draw_bounding_boxes()
@@ -529,18 +533,12 @@ int main(int argc, char **argv) {
                                                             segment_cnt, segment_size,
                                                             tmp_folder);
     vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms);
-
     vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
                                          segment_cnt, segment_size, max_detections_per_frame);
-
-    
-    /*auto trajectories =*/ merge_tracklets(tracklets, segment_cnt);
-
-    print_tracklets_net_costs(tracklets, segment_cnt);
+    vector2d<Detection> trajectories = merge_tracklets(tracklets, segment_cnt);
 
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
-
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
