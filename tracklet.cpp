@@ -20,7 +20,7 @@ void Tracklet::set_middle_point(const vector<Detection> &detection_track)
 }
 
 void Tracklet::set_histogram(const vector2d<cv::Mat> &histograms, 
-                                         int seg_ctr, int seg_size)
+                             int seg_ctr, int seg_size)
 {
     // tracklet's appearance feature is the mean of color histograms of detections from the tracklet
     vector<int> detection_ids = get_detection_ids();
@@ -44,23 +44,7 @@ vector<int> Tracklet::get_detection_ids() const
     return detection_ids;
 }
 
-void Tracklet::calculate_net_cost(vector<Tracklet> next_segment_tracks)
-{
-    for (auto track: next_segment_tracks)
-    {
-        double histogram_intersection_kernel = cv::compareHist(histogram, 
-                                                               track.histogram,
-                                                               3); // CV_COMP_INTERSECT
-        HistInterKernel hik = {
-            .id1 = id,
-            .id2 = track.id,
-            .value = histogram_intersection_kernel
-        };
-        net_cost.push_back(hik);
-    }
-}
-
-void Tracklet::print()
+void Tracklet::print() const
 {
     std::cout << "Tracklet: " << id << ", center: ";
     center.print();

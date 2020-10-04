@@ -25,8 +25,7 @@ public:
         set_histogram(histograms, seg_ctr, seg_size);
         print();
     }
-    void calculate_net_cost(vector<Tracklet>);
-    void print();
+    void print() const;
 
 private:
     void set_middle_point(const vector<Detection> &detection_track);

@@ -450,17 +450,35 @@ void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, cons
     cv::imwrite(path, img);
 }
 
-void set_tracklets_net_costs(vector2d<Tracklet> tracklets)
+void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
 {
     std::cout << std::endl;
-    for (int i = 0; i < tracklets.size() - 1; i++)
+    for (int i = 0; i < tracklets.size() - 1; i++) // which segment
     {
         std::cout << "Setting tracklet net costs for segment " << i << std::endl;
-        for (int j = 0; j < tracklets[i].size(); j++)
+        for (int j = 0; j < tracklets[i].size(); j++) // from which tracklet in this segment
         {
             std::cout << "Setting tracklet net costs for tracklet " << j << std::endl;
             tracklets[i][j].print();
-            tracklets[i][j].calculate_net_cost(tracklets[i+1]);
+
+            for (int k = 0; k < tracklets[i+1].size(); k++) // id of the tracklet in the next segment
+            {
+                std::cout << "Calculating HIK with ";
+                tracklets[i+1][k].print();
+                
+                double hik_val = cv::compareHist(tracklets[i][j].histogram, 
+                                                 tracklets[i+1][k].histogram,
+                                                 3); // CV_COMP_INTERSECT
+                std::cout << "HIK value = " << hik_val << std::endl;
+                
+                HistInterKernel hik = {
+                    .id1 = j,
+                    .id2 = k,
+                    .value = hik_val
+                };
+                hik.print();
+                tracklets[i][j].net_cost.push_back(hik); // todo: reserve memory b4 pushing
+            }
         }
     }
 }
@@ -514,11 +532,11 @@ int main(int argc, char **argv) {
 
     vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
                                          segment_cnt, segment_size, max_detections_per_frame);
+
+    
     /*auto trajectories =*/ merge_tracklets(tracklets, segment_cnt);
 
-
-    // print_tracklets_net_costs(tracklets, segment_cnt);
-
+    print_tracklets_net_costs(tracklets, segment_cnt);
 
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);

@@ -187,15 +187,16 @@ void print_tracklet_center(const Location &center, int segment_ctr, int tracklet
 void print_tracklets_net_costs(const vector2d<Tracklet> &tracklets, int segment_cnt)
 {
     std::cout << std::endl;
-    for (int i = 0; i < segment_cnt; i++)
+    for (int i = 0; i < segment_cnt - 1; i++)
     {
         std::cout << "Net costs in segment " << i+1 << "/" << segment_cnt << std::endl;
         for (int j = 0; j < tracklets[i].size(); j++)
         {
-            std::cout << "Net Cost " << j+1 << "/" << tracklets[i].size() << std::endl;
-            for (auto edge_cost: tracklets[i][j].net_cost)
+            std::cout << "Net costs for tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
+            // for (auto edge_cost: tracklets[i][j].net_cost)
+            for (int k = 0; k < tracklets[i][j].net_cost.size(); k++)
             {
-                edge_cost.print();
+                tracklets[i][j].net_cost[k].print();
             }
         }
     }
