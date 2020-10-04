@@ -46,6 +46,6 @@ vector<int> Tracklet::get_detection_ids() const
 
 void Tracklet::print() const
 {
-    std::cout << "Tracklet: " << id << ", center: ";
+    std::cout << "Tracklet: " << id << ", trajectory_id: " << trajectory_id << ", center: ";
     center.print();
 }

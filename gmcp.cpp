@@ -483,35 +483,45 @@ void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
     }
 }
 
+int get_trajectory_cnt(vector2d<Tracklet> &tracklets)
+{
+    int min = tracklets[0].size();
+    for (int i = 1; i < tracklets.size(); i++)
+        if (tracklets[i].size() < min)
+            min = tracklets[i].size();
+    std::cout << "Looking for " << min << " trajectories" << std::endl;
+    return min;
+}
+
 void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt)
 {
     // this is a greedy PoC
     // first of all find the cheapest way from any node from the first segment to any node in the second segment
-
-    // for every detection
-    // check if there are enough detections left
-    HistInterKernel first;
-    vector<HistInterKernel> first_seg_cheapest;
-    for (int i = 0; i < tracklets[0].size(); i++)
+    for (int traj_id = 0; traj_id < get_trajectory_cnt(tracklets); traj_id++) 
     {
-        first_seg_cheapest.push_back(get_cheapest(tracklets[0][i].net_cost));
-    }
-    HistInterKernel first_hik = get_cheapest(first_seg_cheapest);
-    std::cout << "First hik in trajectory: ";
-    first_hik.print();
+        HistInterKernel first;
+        vector<HistInterKernel> first_seg_cheapest;
+        for (int i = 0; i < tracklets[0].size(); i++)
+        {
+            first_seg_cheapest.push_back(get_cheapest(tracklets[0][i].net_cost));
+        }
+        HistInterKernel first_hik = get_cheapest(first_seg_cheapest);
+        std::cout << "First hik in trajectory: ";
+        first_hik.print();
 
-    tracklets[0][first_hik.id1].trajectory_id = 0; // tracklets[i]
-    tracklets[1][first_hik.id2].trajectory_id = 0; // tracklets[i+1]
-    tracklets[0][first_hik.id1].net_cost.clear();
+        tracklets[0][first_hik.id1].trajectory_id = traj_id;
+        tracklets[1][first_hik.id2].trajectory_id = traj_id;
+        tracklets[0][first_hik.id1].net_cost.clear();
 
-    int from_hik = first_hik.id2;
-    for (int i = 1; i < segment_cnt - 1; i++)
-    {
-        HistInterKernel next_hik = get_cheapest(tracklets[i][from_hik].net_cost, from_hik);
-        next_hik.print();
-        tracklets[i][next_hik.id2].trajectory_id = 0;
-        tracklets[i+1][next_hik.id2].net_cost.clear();
-        from_hik = next_hik.id2;
+        int from_hik = first_hik.id2;
+        for (int i = 1; i < segment_cnt - 1; i++)
+        {
+            HistInterKernel next_hik = get_cheapest(tracklets[i][from_hik].net_cost, from_hik);
+            next_hik.print();
+            tracklets[i+1][next_hik.id2].trajectory_id = traj_id;
+            tracklets[i][next_hik.id1].net_cost.clear();
+            from_hik = next_hik.id2;
+        }
     }
 }
 
