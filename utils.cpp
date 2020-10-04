@@ -150,7 +150,7 @@ void print_detections(const vector2d<Detection> &detections)
     }
 }
 
-void print_net_cost(const std::vector<std::vector<HistInterKernel>> &net_cost)
+void print_net_cost(const vector2d<HistInterKernel> &net_cost)
 {
     // for debug purposes only
     // for (auto frame: net_cost)
@@ -182,4 +182,21 @@ void print_tracklet_center(const Location &center, int segment_ctr, int tracklet
 {
     std::cout << "Segment: " << segment_ctr+1 << ", tracklet: " << tracklet_ctr+1 << ", center: ";
     center.print();
+}
+
+void print_tracklets_net_costs(const vector2d<Tracklet> &tracklets, int segment_cnt)
+{
+    std::cout << std::endl;
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << "Net costs in segment " << i+1 << "/" << segment_cnt << std::endl;
+        for (int j = 0; j < tracklets[i].size(); j++)
+        {
+            std::cout << "Net Cost " << j+1 << "/" << tracklets[i].size() << std::endl;
+            for (auto edge_cost: tracklets[i][j].net_cost)
+            {
+                edge_cost.print();
+            }
+        }
+    }
 }

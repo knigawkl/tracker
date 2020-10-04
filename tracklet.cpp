@@ -48,6 +48,20 @@ void Tracklet::calculate_net_cost(vector<Tracklet> next_segment_tracks)
 {
     for (auto track: next_segment_tracks)
     {
-        ;
+        double histogram_intersection_kernel = cv::compareHist(histogram, 
+                                                               track.histogram,
+                                                               3); // CV_COMP_INTERSECT
+        HistInterKernel hik = {
+            .id1 = id,
+            .id2 = track.id,
+            .value = histogram_intersection_kernel
+        };
+        net_cost.push_back(hik);
     }
+}
+
+void Tracklet::print()
+{
+    std::cout << "Tracklet: " << id << ", center: ";
+    center.print();
 }

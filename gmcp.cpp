@@ -338,7 +338,7 @@ vector<Detection> get_detection_path(const vector2d<Detection> &detections,
     return path;
 }
 
-double get_motion_cost(const vector<Detection> &path,
+double get_motion_cost(const vector<Detection> &path, // todo: Location may be base class for Detection -> so that this method could be used both for detection and trajectory motion cost calculation
                        int seg_size, int seg_counter)
 {
     double cost = 0;
@@ -428,7 +428,6 @@ auto track(vector2d<Detection> &detections,
 
             // there the best possible path should be chosen, based on both app and motion cost
             // current solution is just too greedy
-
             tracklets[i].push_back(Tracklet(path, histograms, i, segment_size, j));
             remove_path(detections, detection_ids, i);
             remove_path(net_cost, detection_ids, i);
@@ -449,6 +448,26 @@ void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, cons
     cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
     cv::rectangle(img, rect, color, line_thickness);
     cv::imwrite(path, img);
+}
+
+void set_tracklets_net_costs(vector2d<Tracklet> tracklets)
+{
+    std::cout << std::endl;
+    for (int i = 0; i < tracklets.size() - 1; i++)
+    {
+        std::cout << "Setting tracklet net costs for segment " << i << std::endl;
+        for (int j = 0; j < tracklets[i].size(); j++)
+        {
+            std::cout << "Setting tracklet net costs for tracklet " << j << std::endl;
+            tracklets[i][j].print();
+            tracklets[i][j].calculate_net_cost(tracklets[i+1]);
+        }
+    }
+}
+
+void merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
+{
+    set_tracklets_net_costs(tracklets);
 }
 
 void draw_bounding_boxes()
@@ -494,10 +513,16 @@ int main(int argc, char **argv) {
     vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms);
 
     vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
-                                          segment_cnt, segment_size, max_detections_per_frame);
-    // /*auto trajectories =*/ merge_tracklets(tracklets, histograms, segment_size);
+                                         segment_cnt, segment_size, max_detections_per_frame);
+    /*auto trajectories =*/ merge_tracklets(tracklets, segment_cnt);
+
+
+    // print_tracklets_net_costs(tracklets, segment_cnt);
+
+
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
+
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();

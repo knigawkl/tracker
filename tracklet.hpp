@@ -17,14 +17,16 @@ public:
     vector<HistInterKernel> net_cost;
 
     Tracklet(const vector<Detection> &path, const vector2d<cv::Mat> &histograms, 
-             int seg_ctr, int seg_size, int id)
+             int seg_ctr, int seg_size, int tracklet_id)
     {
-        id = id;
+        id = tracklet_id;
         detections = path;
         set_middle_point(path);
         set_histogram(histograms, seg_ctr, seg_size);
+        print();
     }
     void calculate_net_cost(vector<Tracklet>);
+    void print();
 
 private:
     void set_middle_point(const vector<Detection> &detection_track);
