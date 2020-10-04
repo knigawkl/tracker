@@ -11,6 +11,7 @@ class Tracklet
 {
 public:
     int id;
+    int trajectory_id = -1;
     vector<Detection> detections;
     Location center;
     cv::Mat histogram;

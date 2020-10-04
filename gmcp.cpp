@@ -477,9 +477,41 @@ void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
                     .value = hik_val
                 };
                 hik.print();
-                tracklets[i][j].net_cost.push_back(hik); // todo: reserve memory b4 pushing
+                tracklets[i][j].net_cost.push_back(hik);
             }
         }
+    }
+}
+
+void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt)
+{
+    // this is a greedy PoC
+    // first of all find the cheapest way from any node from the first segment to any node in the second segment
+
+    // for every detection
+    // check if there are enough detections left
+    HistInterKernel first;
+    vector<HistInterKernel> first_seg_cheapest;
+    for (int i = 0; i < tracklets[0].size(); i++)
+    {
+        first_seg_cheapest.push_back(get_cheapest(tracklets[0][i].net_cost));
+    }
+    HistInterKernel first_hik = get_cheapest(first_seg_cheapest);
+    std::cout << "First hik in trajectory: ";
+    first_hik.print();
+
+    tracklets[0][first_hik.id1].trajectory_id = 0; // tracklets[i]
+    tracklets[1][first_hik.id2].trajectory_id = 0; // tracklets[i+1]
+    tracklets[0][first_hik.id1].net_cost.clear();
+
+    int from_hik = first_hik.id2;
+    for (int i = 1; i < segment_cnt - 1; i++)
+    {
+        HistInterKernel next_hik = get_cheapest(tracklets[i][from_hik].net_cost, from_hik);
+        next_hik.print();
+        tracklets[i][next_hik.id2].trajectory_id = 0;
+        tracklets[i+1][next_hik.id2].net_cost.clear();
+        from_hik = next_hik.id2;
     }
 }
 
@@ -487,6 +519,7 @@ vector2d<Detection> merge_tracklets(vector2d<Tracklet> &tracklets, int segment_c
 {
     set_tracklets_net_costs(tracklets);
     print_tracklets_net_costs(tracklets, segment_cnt);
+    assign_trajectory_ids(tracklets, segment_cnt);
 
     vector2d<Detection> trajectories;
     return trajectories;
