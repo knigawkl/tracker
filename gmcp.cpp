@@ -481,6 +481,7 @@ void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
             }
         }
     }
+    print_tracklets_net_costs(tracklets, tracklets.size());
 }
 
 int get_trajectory_cnt(vector2d<Tracklet> &tracklets)
@@ -493,11 +494,11 @@ int get_trajectory_cnt(vector2d<Tracklet> &tracklets)
     return min;
 }
 
-void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt)
+void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt, int trajectory_cnt)
 {
     // this is a greedy PoC
     // first of all find the cheapest way from any node from the first segment to any node in the second segment
-    for (int traj_id = 0; traj_id < get_trajectory_cnt(tracklets); traj_id++) 
+    for (int traj_id = 0; traj_id < trajectory_cnt; traj_id++) 
     {
         HistInterKernel first;
         vector<HistInterKernel> first_seg_cheapest;
@@ -525,13 +526,25 @@ void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt)
     }
 }
 
-vector2d<Detection> merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
+vector2d<Detection> form_trajectories(vector2d<Tracklet> tracklets, int trajectory_cnt, int segment_cnt)
 {
-    set_tracklets_net_costs(tracklets);
-    print_tracklets_net_costs(tracklets, segment_cnt);
-    assign_trajectory_ids(tracklets, segment_cnt);
-
-    vector2d<Detection> trajectories;
+    vector2d<Detection> trajectories(trajectory_cnt, vector<Detection>());
+    for (int i = 0; i < trajectory_cnt; i++)
+    {
+        for (int j = 0; j < segment_cnt; j++)
+        {
+            for (int k = 0; k < tracklets[j].size(); k++)
+            {
+                if (tracklets[j][k].id == i)
+                {
+                    for (auto d: tracklets[j][k].detections)
+                        trajectories[i].push_back(d);
+                    std::cout << "Adding to trajectory " << i;
+                    print_detection_path(tracklets[j][k].detections);
+                }
+            }
+        }
+    }
     return trajectories;
 }
 
@@ -578,7 +591,11 @@ int main(int argc, char **argv) {
     vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms);
     vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
                                          segment_cnt, segment_size, max_detections_per_frame);
-    vector2d<Detection> trajectories = merge_tracklets(tracklets, segment_cnt);
+    
+    int trajectory_cnt = get_trajectory_cnt(tracklets);
+    set_tracklets_net_costs(tracklets);
+    assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
+    vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
     // draw_bounding_boxes(trajectories);
     // merge_frames(tmp_folder);
