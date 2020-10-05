@@ -440,14 +440,11 @@ auto track(vector2d<Detection> &detections,
     return tracklets;
 }
 
-void draw_rectangle(const Detection &d, const cv::Scalar &color, int frame, const std::string &tmp_folder) // todo: in order to be more generic, this should take path to the image as param
+void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
 {
     constexpr int const line_thickness = 2; 
-    auto path = get_frame_path(frame, tmp_folder);
-    cv::Mat img = cv::imread(path);
     cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
     cv::rectangle(img, rect, color, line_thickness);
-    cv::imwrite(path, img);
 }
 
 void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
@@ -539,7 +536,7 @@ vector2d<Detection> form_trajectories(vector2d<Tracklet> tracklets, int trajecto
                 {
                     for (auto d: tracklets[j][k].detections)
                         trajectories[i].push_back(d);
-                    std::cout << "Adding to trajectory " << i;
+                    std::cout << "Adding to trajectory " << i << " ";
                     print_detection_path(tracklets[j][k].detections);
                 }
             }
@@ -548,10 +545,19 @@ vector2d<Detection> form_trajectories(vector2d<Tracklet> tracklets, int trajecto
     return trajectories;
 }
 
-void draw_bounding_boxes()
+void draw_bounding_boxes(const vector2d<Detection> &trajectories, int frame_cnt, 
+                         std::string tmp_folder, vector<cv::Scalar> colors)
 {
-    // draw detections on tmp frames
-    // get_frame_path sie przyda
+    for (int i = 0; i < frame_cnt; i++)
+    {
+        auto path = get_frame_path(i, tmp_folder);
+        cv::Mat img = cv::imread(path);
+        for (int j = 0; j < trajectories.size(); j++)
+        {
+            draw_rectangle(trajectories[j][i], colors[j], img);
+        }
+        cv::imwrite(path, img);
+    }
 }
 
 void merge_frames(std::string tmp_folder)
@@ -597,10 +603,10 @@ int main(int argc, char **argv) {
     assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
-    // draw_bounding_boxes(trajectories);
+    draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     // merge_frames(tmp_folder);
 
-    clear_tmp(tmp_folder);
+    // clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     print_exec_time(begin, end);
     print_detect_time(detect_begin, detect_end);

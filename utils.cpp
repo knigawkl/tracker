@@ -41,7 +41,7 @@ void cp(std::string what, std::string where)
     system(cp_command.c_str());
 }
 
-std::vector<cv::Scalar> get_colors(int vec_len)
+vector<cv::Scalar> get_colors(int vec_len)
 {    
     std::vector<cv::Scalar> colors;
     colors.reserve(vec_len);
