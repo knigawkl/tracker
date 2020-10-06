@@ -447,9 +447,11 @@ void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
     cv::rectangle(img, rect, color, line_thickness);
 }
 
-void set_tracklets_net_costs(vector2d<Tracklet> &tracklets)
+void set_tracklets_net_costs(vector2d<Tracklet> &tracklets, int segment_cnt)
 {
     std::cout << std::endl;
+    if (segment_cnt < 2)
+        return;
     for (int i = 0; i < tracklets.size() - 1; i++) // which segment
     {
         std::cout << "Setting tracklet net costs for segment " << i << std::endl;
@@ -493,6 +495,8 @@ int get_trajectory_cnt(vector2d<Tracklet> &tracklets)
 
 void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt, int trajectory_cnt)
 {
+    if (segment_cnt < 2)
+        return;
     // this is a greedy PoC
     // first of all find the cheapest way from any node from the first segment to any node in the second segment
     for (int traj_id = 0; traj_id < trajectory_cnt; traj_id++) 
@@ -526,6 +530,13 @@ void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt, int t
 vector2d<Detection> form_trajectories(vector2d<Tracklet> tracklets, int trajectory_cnt, int segment_cnt)
 {
     vector2d<Detection> trajectories(trajectory_cnt, vector<Detection>());
+    if (segment_cnt == 1)
+        for (int i = 0; i < tracklets[0].size(); i++)
+            for (auto d: tracklets[0][i].detections)
+                trajectories[i].push_back(d);
+
+        return trajectories;
+
     for (int i = 0; i < trajectory_cnt; i++)
     {
         for (int j = 0; j < segment_cnt; j++)
@@ -605,7 +616,7 @@ int main(int argc, char **argv) {
                                          segment_cnt, segment_size, max_detections_per_frame);
     
     int trajectory_cnt = get_trajectory_cnt(tracklets);
-    set_tracklets_net_costs(tracklets);
+    set_tracklets_net_costs(tracklets, segment_cnt);
     assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
