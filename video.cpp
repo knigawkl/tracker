@@ -39,3 +39,13 @@ void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt,
         cp(in_video, tmp_video);
     }
 }
+
+void merge_frames(std::string tmp_folder, std::string out_video)
+{
+    std::stringstream ss;
+    ss << "ffmpeg -framerate " << 30 << " -pattern_type glob -i \'" << tmp_folder << "/img/*.jpeg\' "
+       << "-c:v libx264 -pix_fmt yuv420p " << out_video << " -y";
+    std::string merge_command = ss.str();
+    std::cout << "Executing: " << merge_command << std::endl;
+    system(merge_command.c_str());
+}

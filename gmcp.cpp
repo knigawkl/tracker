@@ -572,16 +572,6 @@ void draw_bounding_boxes(const vector2d<Detection> &trajectories, int frame_cnt,
     }
 }
 
-void merge_frames(std::string tmp_folder, std::string out_video)
-{
-    std::stringstream ss;
-    ss << "ffmpeg -framerate " << 30 << " -pattern_type glob -i \'" << tmp_folder << "/img/*.jpeg\' "
-       << "-c:v libx264 -pix_fmt yuv420p " << out_video << " -y";
-    std::string merge_command = ss.str();
-    std::cout << "Executing: " << merge_command << std::endl;
-    system(merge_command.c_str());
-}
-
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -622,7 +612,7 @@ int main(int argc, char **argv) {
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
     draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    // merge_frames(tmp_folder, out_video);
+    merge_frames(tmp_folder, out_video);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
