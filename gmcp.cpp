@@ -531,11 +531,12 @@ vector2d<Detection> form_trajectories(vector2d<Tracklet> tracklets, int trajecto
 {
     vector2d<Detection> trajectories(trajectory_cnt, vector<Detection>());
     if (segment_cnt == 1)
+    {
         for (int i = 0; i < tracklets[0].size(); i++)
             for (auto d: tracklets[0][i].detections)
                 trajectories[i].push_back(d);
-
         return trajectories;
+    }
 
     for (int i = 0; i < trajectory_cnt; i++)
     {
@@ -621,7 +622,7 @@ int main(int argc, char **argv) {
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
     draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    merge_frames(tmp_folder, out_video);
+    // merge_frames(tmp_folder, out_video);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
