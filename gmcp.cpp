@@ -468,8 +468,6 @@ void set_tracklets_net_costs(vector2d<Tracklet> &tracklets, int segment_cnt)
                 double hik_val = cv::compareHist(tracklets[i][j].histogram, 
                                                  tracklets[i+1][k].histogram,
                                                  3); // CV_COMP_INTERSECT
-                std::cout << "HIK value = " << hik_val << std::endl;
-                
                 HistInterKernel hik = {
                     .id1 = j,
                     .id2 = k,
@@ -611,8 +609,8 @@ int main(int argc, char **argv) {
     assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
-    draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    merge_frames(tmp_folder, out_video);
+    // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
+    // merge_frames(tmp_folder, out_video);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
