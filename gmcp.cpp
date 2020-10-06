@@ -62,7 +62,7 @@ void get_parameters(int argc, char **argv, int& segment_size, std::string& in_vi
 void verify_parameters(int segment_size, std::string in_video, std::string out_video, 
                        std::string detector, std::string detector_cfg, std::string tmp_folder)
 {
-    if (segment_size < 3)
+    if (segment_size < 2)
     {
         std::cout << "Segment size has to be at least 3. Aborting.";
         exit(0);
