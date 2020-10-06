@@ -578,6 +578,7 @@ int main(int argc, char **argv) {
     get_parameters(argc, argv, segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
     verify_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
     print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
+    clear_tmp(tmp_folder);
     make_tmp_dirs(tmp_folder);
 
     cv::VideoCapture in_cap(in_video);
