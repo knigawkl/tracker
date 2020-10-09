@@ -533,10 +533,7 @@ void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt, int t
         return;
     // this is a greedy PoC
     // first of all find the cheapest way from any node from the first segment to any node in the second segment
-
-    // wektor2d already_used - dla każdego segmentu, do których detekcji już nie można iść
-    vector2d<int> used(segment_cnt, vector<int>()); // for each segment, vector of hik id2 that are already in use
-    
+    vector2d<int> used(segment_cnt, vector<int>());
     for (int traj_id = 0; traj_id < trajectory_cnt; traj_id++) 
     {
         HistInterKernel first;
