@@ -278,6 +278,42 @@ HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int id1)
     return mini;
 }
 
+HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, const vector<int> &used)
+{
+    double maxi = std::numeric_limits<double>::max();
+    HistInterKernel mini = {
+        .id1 = -1,
+        .id2 = -1,
+        .value = maxi
+    };
+    for (auto hik: hiks)
+    {
+        if (hik.value < mini.value && !std::count(used.begin(), used.end(), hik.id2))
+        {
+            mini = hik;
+        }
+    }
+    return mini;
+}
+
+HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int id1, const vector<int> &used)
+{
+    double maxi = std::numeric_limits<double>::max();
+    HistInterKernel mini = {
+        .id1 = -1,
+        .id2 = -1,
+        .value = maxi
+    };
+    for (auto hik: hiks)
+    {   
+        if (hik.id1 == id1 && hik.value < mini.value && !std::count(used.begin(), used.end(), hik.id2))
+        {
+            mini = hik;
+        }
+    }
+    return mini;
+}
+
 vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net_cost,
                                        int seg_size, int seg_counter)
 {
@@ -497,30 +533,36 @@ void assign_trajectory_ids(vector2d<Tracklet> &tracklets, int segment_cnt, int t
         return;
     // this is a greedy PoC
     // first of all find the cheapest way from any node from the first segment to any node in the second segment
+
+    // wektor2d already_used - dla każdego segmentu, do których detekcji już nie można iść
+    vector2d<int> used(segment_cnt, vector<int>()); // for each segment, vector of hik id2 that are already in use
+    
     for (int traj_id = 0; traj_id < trajectory_cnt; traj_id++) 
     {
         HistInterKernel first;
         vector<HistInterKernel> first_seg_cheapest;
         for (int i = 0; i < tracklets[0].size(); i++)
         {
-            first_seg_cheapest.push_back(get_cheapest(tracklets[0][i].net_cost));
+            first_seg_cheapest.push_back(get_cheapest(tracklets[0][i].net_cost, used[0])); 
         }
-        HistInterKernel first_hik = get_cheapest(first_seg_cheapest);
+        HistInterKernel first_hik = get_cheapest(first_seg_cheapest, used[0]);
         std::cout << "First hik in trajectory: ";
         first_hik.print();
 
         tracklets[0][first_hik.id1].trajectory_id = traj_id;
         tracklets[1][first_hik.id2].trajectory_id = traj_id;
         tracklets[0][first_hik.id1].net_cost.clear();
-
+        used[0].push_back(first_hik.id2);
+                
         int from_hik = first_hik.id2;
         for (int i = 1; i < segment_cnt - 1; i++)
         {
-            HistInterKernel next_hik = get_cheapest(tracklets[i][from_hik].net_cost, from_hik);
+            HistInterKernel next_hik = get_cheapest(tracklets[i][from_hik].net_cost, from_hik, used[i]);
             next_hik.print();
             tracklets[i+1][next_hik.id2].trajectory_id = traj_id;
             tracklets[i][next_hik.id1].net_cost.clear();
             from_hik = next_hik.id2;
+            used[i].push_back(first_hik.id2);
         }
     }
 }
@@ -609,8 +651,8 @@ int main(int argc, char **argv) {
     assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
     vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
-    // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    // merge_frames(tmp_folder, out_video);
+    draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
+    merge_frames(tmp_folder, out_video);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
