@@ -184,16 +184,16 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
     return nodes;
 }
 
-// int get_max_nodes_in_cluster(const vector2d<Node> &nodes)
-// {
-//     // checks what is the biggest number of detections in a single frame
-//     int maxi = 0;
-//     for (auto const& d : detections)
-//         if (d.size() > maxi)
-//             maxi = d.size();
-//     std::cout << "Max number of detections per frame is: " << maxi << std::endl;
-//     return maxi;
-// }
+int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
+{
+    // checks what is the biggest number of detections in a single frame
+    int maxi = 0;
+    for (auto const& n : nodes)
+        if (n.size() > maxi)
+            maxi = n.size();
+    std::cout << "Max number of detections per frame is: " << maxi << std::endl;
+    return maxi;
+}
 
 // auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
 // {  
@@ -605,16 +605,9 @@ int main(int argc, char **argv) {
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
 
-    // vector of Nodes (detections) for each frame
-    vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h);
-
-
-
-
-
-
-    // int max_detections_per_frame = get_max_detections_per_frame(detections);
-    // auto colors = get_colors(max_detections_per_frame); // todo: when using hypothetical nodes, more colors might be needed
+    vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h); // vector of Nodes (detections) for each frame
+    int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
+    auto colors = get_colors(max_nodes_per_cluster);
     
     // vector of histogram matrices of detection images for each frame
     // detection of id==0 has its histogram at the start of the vector and so on and on
