@@ -185,17 +185,6 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
     return nodes;
 }
 
-int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
-{
-    // checks what is the biggest number of detections in a single frame
-    int maxi = 0;
-    for (auto const& n : nodes)
-        if (n.size() > maxi)
-            maxi = n.size();
-    std::cout << "Max number of detections per frame is: " << maxi << std::endl;
-    return maxi;
-}
-
 // HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
 // {
 //     double maxi = std::numeric_limits<double>::max();
@@ -288,29 +277,6 @@ int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
 //     return detection_ids;
 // }
 
-// double get_appearance_cost(const vector2d<HistInterKernel> &net_cost,
-//                            const vector<int> &detection_ids, int seg_counter)
-// {
-//     double cost = 0;
-//     int component_counter = 0;
-//     int start = seg_counter * detection_ids.size();
-//     for (int i = 0; i < detection_ids.size() - 1; i++)
-//     {
-//         for (auto hik: net_cost[start+i])
-//         {
-//             if (hik.id1 == detection_ids[i] && hik.id2 == detection_ids[i+1])
-//             {
-//                 cost += hik.value;
-//                 component_counter++;
-//                 break;
-//             }
-//         }
-//     }
-//     std::cout << "Appearance cost = " << cost 
-//               << ", based on " << component_counter << " components" << std::endl;
-//     return cost;
-// }
-
 // vector<Detection> get_detection_path(const vector2d<Detection> &detections,
 //                                      const vector<int> &detection_ids, int seg_counter)
 // {
@@ -326,25 +292,6 @@ int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
 //         }
 //     }
 //     return path;
-// }
-
-// double get_motion_cost(const vector<Detection> &path, // todo: Location may be base class for Detection -> so that this method could be used both for detection and trajectory motion cost calculation
-//                        int seg_size, int seg_counter)
-// {
-//     double cost = 0;
-//     vector<int> sums;
-//     int diff_size = seg_size - 1;
-//     sums.reserve(diff_size);
-//     for (int i = 0; i < diff_size; i++)
-//     {
-//         sums.push_back(pow(path[i].x - path[i+1].x, 2) + pow(path[i].y - path[i+1].y, 2));
-//     }
-//     for (int i = 0; i < diff_size; i++)
-//         cost += sums[i];
-//     cost = sqrt(cost);
-
-//     std::cout << "Motion cost     = " << cost << std::endl;
-//     return cost;
 // }
 
 // void remove_path(vector2d<Detection> &detections, const vector<int> &detection_ids, int seg_counter)

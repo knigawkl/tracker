@@ -18,3 +18,14 @@ void Node::print() const
               << ", frame_id: " << cluster_id << ", ";
     coords.print();
 }
+
+int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
+{
+    // checks what is the biggest number of detections in a single frame
+    int maxi = 0;
+    for (auto const& n : nodes)
+        if (n.size() > maxi)
+            maxi = n.size();
+    std::cout << "Max number of detections per frame is: " << maxi << std::endl;
+    return maxi;
+}

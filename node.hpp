@@ -2,6 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "gmcp.hpp"
+
 struct Detection // todo: maybe incorporate this into the Node class?
 {
     int x, y, id, x_min, y_min, x_max, y_max, height, width;
@@ -33,3 +35,5 @@ public:
 private:
     void set_histogram(const cv::Mat &frame);
 };
+
+int get_max_nodes_per_cluster(const vector2d<Node> &nodes);
