@@ -22,7 +22,6 @@ public:
     int cluster_id;
     Detection coords;
     cv::Mat histogram;
-    // add cost to any node in any frame except current
 
     Node(const Detection &d, const cv::Mat &frame, int detection_id, int frame_id): 
          coords(d), node_id(detection_id), cluster_id(frame_id)

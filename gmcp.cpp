@@ -20,6 +20,7 @@
 #include "video.hpp"
 #include "tracklet.hpp"
 #include "node.hpp"
+#include "edge.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -195,26 +196,6 @@ int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
     return maxi;
 }
 
-// auto get_net_cost(int frame_cnt, const vector2d<cv::Mat> &histograms)
-// {  
-//     vector2d<HistInterKernel> net_cost(frame_cnt, vector<HistInterKernel>());
-//     for (int i = 0; i < frame_cnt - 1; i++) // from which frame
-//         for (int k = 0; k < histograms[i].size(); k++) // from which detection
-//             for (int l = 0; l < histograms[i+1].size(); l++) // to which detection
-//             {
-//                 double histogram_intersection_kernel = cv::compareHist(histograms[i][k], 
-//                                                                        histograms[i+1][l],
-//                                                                        3); // CV_COMP_INTERSECT
-//                 HistInterKernel hik = {
-//                     .id1 = k,
-//                     .id2 = l,
-//                     .value = histogram_intersection_kernel
-//                 };
-//                 net_cost[i].push_back(hik);
-//             }
-//     return net_cost;
-// }
-
 // HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
 // {
 //     double maxi = std::numeric_limits<double>::max();
@@ -351,7 +332,7 @@ int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
 //                        int seg_size, int seg_counter)
 // {
 //     double cost = 0;
-//     vector<int> x_diffs, y_diffs, sums;
+//     vector<int> sums;
 //     int diff_size = seg_size - 1;
 //     sums.reserve(diff_size);
 //     for (int i = 0; i < diff_size; i++)
@@ -567,7 +548,7 @@ int get_max_nodes_per_cluster(const vector2d<Node> &nodes)
 //     return trajectories;
 // }
 
-// void draw_bounding_boxes(const vector2d<Detection> &trajectories, int frame_cnt, 
+// void draw_bounding_boxes(const vector2d<Detection> &trajectories, int frame_cnt,    // todo: maybe a vector2d of Node?
 //                          std::string tmp_folder, vector<cv::Scalar> colors)
 // {
 //     for (int i = 0; i < frame_cnt; i++)
@@ -608,14 +589,19 @@ int main(int argc, char **argv) {
     vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h); // vector of Nodes (detections) for each frame
     int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
     auto colors = get_colors(max_nodes_per_cluster);
+
+    // vector2d<Edge> edges = get_edges()
     
-    // vector of histogram matrices of detection images for each frame
-    // detection of id==0 has its histogram at the start of the vector and so on and on
-    // vector2d<cv::Mat> histograms = get_detection_histograms(detections,                          // instead of this, when constrcting Nodes, get histogram of their detections
-    //                                                         frame_cnt, 
-    //                                                         segment_cnt, segment_size,
-    //                                                         tmp_folder);
+
+
     // vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms); // stop using net_cost naming; perform appearance_cost calculation after all nodes are initialised
+
+
+
+
+
+
+
     // vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
     //                                      segment_cnt, segment_size, max_detections_per_frame);
     
