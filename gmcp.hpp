@@ -6,18 +6,6 @@ using vector = std::vector<T>;
 template <typename T>
 using vector2d = vector<vector<T>>;
 
-struct Detection
-{
-    int x, y, id, x_min, y_min, x_max, y_max, height, width;
-    void print() const
-    {
-        std::cout << "x: " << x << ", y: " << y << ", id: " << id
-                  << ", x_min: " << x_min << ", y_min: " << y_min 
-                  << ", x_max: " << x_max << ", y_max: " << y_max 
-                  << ", height: " << height << ", width: " << width << std::endl;
-    }
-};
-
 struct HistInterKernel
 {
     int id1, id2;
