@@ -377,12 +377,12 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
 //     return tracklets;
 // }
 
-// void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
-// {
-//     constexpr int const line_thickness = 2; 
-//     cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
-//     cv::rectangle(img, rect, color, line_thickness);
-// }
+void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
+{
+    constexpr int const line_thickness = 2; 
+    cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
+    cv::rectangle(img, rect, color, line_thickness);
+}
 
 // void set_tracklets_net_costs(vector2d<Tracklet> &tracklets, int segment_cnt)
 // {
@@ -538,12 +538,16 @@ int main(int argc, char **argv) {
     auto colors = get_colors(max_nodes_per_cluster);
 
     // vector2d<Edge> edges = get_edges()
-    
 
 
     // vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms); // stop using net_cost naming; perform appearance_cost calculation after all nodes are initialised
 
-
+// how to solve gmcp?
+// 1. Begin with an initial solution. Mark it as current solution.
+// 2. Find all neighbor solutions to the current solution.
+// 3. If neighbor solution induces a lower cost:
+//         - replace current solution with that solution and goto 2
+//    Otherwise return current solution as the final solution
 
 
 
