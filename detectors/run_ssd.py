@@ -49,8 +49,8 @@ class SSDDetector(BaseDetector):
         logger.info('   class   conf xmin   ymin   xmax   ymax')
         logger.info(y_pred_thresh[0])
         logger.info(f"Found {len(y_pred_thresh[0])} objects")
+        
         result = []
-
         for box in y_pred_thresh[0]:
             xmin = int(box[2] * np.array(orig_images[0]).shape[1] / IMG_WIDTH)
             ymin = int(box[3] * np.array(orig_images[0]).shape[0] / IMG_HEIGHT)

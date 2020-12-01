@@ -52,13 +52,7 @@ def detect(img_path, model_path):
     print ("[INFO] Head detection over. Time taken: {:.4f} s".format(tt))
     for i in range(pred_bboxes_.shape[0]):
         ymin, xmin, ymax, xmax = pred_bboxes_[i,:]
-        utils.draw_bounding_box_on_image_array(img_raw,ymin, xmin, ymax, xmax)
-    plt.axis('off')
-    plt.imshow(img_raw)
-    if SAVE_FLAG == 1:
-        plt.savefig(os.path.join(opt.test_output_path, file_id+'.png'), bbox_inches='tight', pad_inches=0)
-    else:
-        plt.show()    
+        utils.draw_bounding_box_on_image_array(img_raw,ymin, xmin, ymax, xmax)  
 
 
 if __name__ == "__main__":
