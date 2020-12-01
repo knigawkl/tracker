@@ -98,8 +98,6 @@ void verify_parameters(int segment_size, std::string in_video, std::string out_v
 
 void detect(std::string detector, std::string detector_cfg, int frame_cnt, std::string video, std::string tmp_folder) 
 {
-    // initiates object detections on selected frames of the trimmed video
-    // the detections are then stored in csv files
     std::stringstream ss;
     ss << "python3 ../detectors/detect.py --detector " << detector 
        << " --cfg " << detector_cfg
