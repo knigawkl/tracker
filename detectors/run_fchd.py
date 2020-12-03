@@ -20,7 +20,10 @@ from fchd.head_detection_demo import read_img
 from utils.logger import logger
 from base import BaseDetector
 
-MODEL_PATH = "./fchd/checkpoints/sess:2/head_detector08120858_0.682282441835"
+# MODEL_PATH = "./fchd/checkpoints/sess:2/head_detector08120858_0.682282441835"
+MODEL_PATH = "./fchd/checkpoints/head_detector_final"
+THRESH = 0.01
+
 
 
 class FCHDDetector(BaseDetector):
@@ -42,6 +45,6 @@ class FCHDDetector(BaseDetector):
         result = []
         for i in range(pred_bboxes_.shape[0]):
             ymin, xmin, ymax, xmax = pred_bboxes_[i,:]
-            res = [xmin, ymin, xmax, ymax]
+            res = [int(xmin), int(ymin), int(xmax), int(ymax)]
             result.append(res)
         return result

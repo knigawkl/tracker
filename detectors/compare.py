@@ -27,4 +27,4 @@ if __name__ == "__main__":
         
         end = time.time()
         print("time", end - start)
-        # print("yolo", res)
+        print("fchd", res)
