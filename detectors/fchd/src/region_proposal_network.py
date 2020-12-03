@@ -3,8 +3,8 @@ from torch.nn import functional as F
 import torch as t
 from torch import nn
 
-from src.bbox_tools import generate_anchor_base
-from src.creator_tool import ProposalCreator
+from fchd.src.bbox_tools import generate_anchor_base
+from fchd.src.creator_tool import ProposalCreator
 
 
 class RegionProposalNetwork(nn.Module):

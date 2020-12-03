@@ -5,9 +5,10 @@ import os
 import glob
 import json
 import pickle
-from src.config import opt
 import cv2
 import matplotlib.pyplot as plt
+
+from fchd.src.config import opt
 
 K = 20 # For NN search
 

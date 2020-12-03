@@ -2,14 +2,14 @@ from __future__ import division
 import torch as t
 import numpy as np
 import cupy as cp
-from src import array_tool as at
-from src.bbox_tools import loc2bbox
-from src.nms import non_maximum_suppression
+from fchd.src import array_tool as at
+from fchd.src.bbox_tools import loc2bbox
+from fchd.src.nms import non_maximum_suppression
 
 from torch import nn
-from data.dataset import preprocess
+from fchd.data.dataset import preprocess
 from torch.nn import functional as F
-from src.config import opt
+from fchd.src.config import opt
 
 class Head_Detector(nn.Module):
     def __init__(self, extractor, rpn):

@@ -2,18 +2,18 @@ from __future__ import division
 
 import os
 import torch as t
-from src.config import opt
-from src.head_detector_vgg16 import Head_Detector_VGG16
-from trainer import Head_Detector_Trainer
+from fchd.src.config import opt
+from fchd.src.head_detector_vgg16 import Head_Detector_VGG16
+from fchd.trainer import Head_Detector_Trainer
 from PIL import Image
 import numpy as np
-from data.dataset import preprocess
+from fchd.data.dataset import preprocess
 import matplotlib.pyplot as plt 
-import src.array_tool as at
-from src.vis_tool import visdom_bbox
+import fchd.src.array_tool as at
+from fchd.src.vis_tool import visdom_bbox
 import argparse
-import src.utils as utils
-from src.config import opt
+import fchd.src.utils as utils
+from fchd.src.config import opt
 import time
 
 SAVE_FLAG = 0

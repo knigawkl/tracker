@@ -8,10 +8,10 @@ import torch as t
 from torch.autograd import Variable
 from torchnet.meter import ConfusionMeter, AverageValueMeter
 import os
-from src.creator_tool import AnchorTargetCreator
-import src.array_tool as at
-from src.vis_tool import Visualizer
-from src.config import opt
+from fchd.src.creator_tool import AnchorTargetCreator
+import fchd.src.array_tool as at
+from fchd.src.vis_tool import Visualizer
+from fchd.src.config import opt
 
 LossTuple = namedtuple('LossTuple',
                        ['rpn_loc_loss',

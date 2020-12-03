@@ -3,7 +3,7 @@ ssd:
   nms_max_output_size: 400
   top_k: 200
   iou_threshold: 0.6
-  weights: '/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/detectors/ssd/data/ssd512-hollywood-trainval-bs_16-lr_1e-05-scale_pascal-epoch-187-py3.6.h5'
+  weights: '/home/lk/Desktop/inz/praca-inzynierska/gmcp-tracker-cpp-python/detectors/ssd/data/ssd512-hollywood-trainval-bs_16-lr_1e-05-scale_pascal-epoch-187-py3.6.h5'
 yolo:
   cuda_devices_count: 1
   confidence_threshold: 0.01
@@ -12,5 +12,7 @@ yolo:
   input_size: 416
   labels: ["head"]
   anchors: [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828]
-  weights: '/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/detectors/yolo/data/model.h5'
-  backend_path: '/home/lk/Desktop/praca-inzynierska/gmcp-tracker-cpp-python/detectors/yolo/data/full_yolo_backend.h5'
+  weights: '/home/lk/Desktop/inz/praca-inzynierska/gmcp-tracker-cpp-python/detectors/yolo/data/model.h5'
+  backend_path: '/home/lk/Desktop/inz/praca-inzynierska/gmcp-tracker-cpp-python/detectors/yolo/data/full_yolo_backend.h5'
+fchd:
+  confidence_threshold: 0.01 

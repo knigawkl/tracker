@@ -3,7 +3,7 @@ from skimage import transform as sktsf
 from torchvision import transforms as tvtsf
 from . import util
 import numpy as np
-from src.config import opt
+from fchd.src.config import opt
 from PIL import Image
 
 

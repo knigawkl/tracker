@@ -3,9 +3,9 @@
 import numpy as np
 import cupy as cp
 
-from src.bbox_tools import bbox2loc, bbox_iou, loc2bbox
-from src.nms import non_maximum_suppression
-import src.array_tool as at
+from fchd.src.bbox_tools import bbox2loc, bbox_iou, loc2bbox
+from fchd.src.nms import non_maximum_suppression
+import fchd.src.array_tool as at
 
 class AnchorTargetCreator(object):
     def __init__(self,
