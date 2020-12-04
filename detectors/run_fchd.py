@@ -40,11 +40,10 @@ class FCHDDetector(BaseDetector):
         pred_bboxes_, _ = head_detector.predict(img, scale, mode='evaluate', thresh=THRESH)
         et = time.time()
         tt = et - st
-        print ("[INFO] Head detection over. Time taken: {:.4f} s".format(tt))
-
+        
         result = []
         for i in range(pred_bboxes_.shape[0]):
             ymin, xmin, ymax, xmax = pred_bboxes_[i,:]
-            res = [int(xmin), int(ymin), int(xmax), int(ymax)]
+            res = [int(xmin/scale), int(ymin/scale), int(xmax/scale), int(ymax/scale)]
             result.append(res)
         return result
