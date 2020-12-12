@@ -7,7 +7,7 @@ ssd:
 yolo:
   cuda_devices_count: 1
   confidence_threshold: 0.01
-  max_box_per_image: 100
+  max_box_per_image: 15
   backend: "Full Yolo"
   input_size: 416
   labels: ["head"]

@@ -335,7 +335,7 @@ class YOLO(object):
                                  validation_steps = len(valid_generator) * valid_times,
                                  callbacks        = [early_stop, checkpoint, tensorboard], 
                                  workers          = 3,
-                                 max_queue_size   = 8)      
+                                 max_queue_size   = 1)      
 
         ############################################
         # Compute mAP on the validation set
