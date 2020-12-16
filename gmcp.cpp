@@ -600,7 +600,9 @@ int main(int argc, char **argv) {
                 }
             }
         }
+        // sorting ious in descending order
         std::sort(ious.begin(), ious.end(), iou_cmp);
+        // connecting nodes with high ious
         for(auto const& iou: ious)
         {
             if (nodes[iou.frame][iou.id1].next_node_id == -1 && nodes[iou.frame + 1][iou.id2].prev_node_id == -1)  // if next node not set as yet
@@ -611,42 +613,55 @@ int main(int argc, char **argv) {
             }
         }
 
-        // for (int i = 0; i < segment_size - 1; i++)
-        // {
-        //     int detections_with_next_in_frame = 0;
-        //     vector<HistInterKernel> frame_hiks;
-        //     for (int j = 0; j < nodes[start + i].size(); j++)  // detection id in the current frame
-        //     {
-        //         if (nodes[start + i][j].next_node_id > -1)
-        //             detections_with_next_in_frame++;
-        //         else
-        //         {
-        //             // if the detection does not have next pointer, then we calculate its hiks with detections from next frame that lack prev pointer
-        //             for (int k = 0; k < nodes[start + i + 1].size(); k++)
-        //             {
-        //                 if (nodes[start + i + 1][k].prev_node_id == -1)
-        //                 {
-        //                     double hik_val = cv::compareHist(nodes[start + i][j].histogram, 
-        //                                                      nodes[start + i + 1][k].histogram,
-        //                                                      3); // CV_COMP_INTERSECT
-        //                     int frame = start + i;
-        //                     HistInterKernel hik = {
-        //                         .id1 = j,
-        //                         .id2 = k,
-        //                         .frame = frame,
-        //                         .value = hik_val
-        //                     };
-        //                     frame_hiks.push_back(hik);
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     int connections_needed = min_detections_in_segment_cnt - detections_with_next_in_frame;
-        //     std::sort(frame_hiks.begin(), frame_hiks.end(), hik_cmp);
-        //     for (auto hik: frame_hiks)
-        //         hik.print();
+        // now we have to connect the nodes that still lack prev/next pointers 
+        for (int i = 0; i < segment_size - 1; i++)  // for each frame in the segment except for the last one
+        {
+            int detections_with_next_in_frame = 0;
+            vector<HistInterKernel> frame_hiks;
+            for (int j = 0; j < nodes[start + i].size(); j++)  // for each detection in the frame
+            {
+                if (nodes[start + i][j].next_node_id > -1)  // if the detection already has next pointer go to the next detection
+                    detections_with_next_in_frame++;
+                else
+                {
+                    // if the detection does not have next pointer, then we calculate its hiks with detections from next frame that lack prev pointer
+                    for (int k = 0; k < nodes[start + i + 1].size(); k++)
+                    {
+                        if (nodes[start + i + 1][k].prev_node_id == -1)
+                        {
+                            double hik_val = cv::compareHist(nodes[start + i][j].histogram, 
+                                                             nodes[start + i + 1][k].histogram,
+                                                             3); // CV_COMP_INTERSECT
+                            int frame = start + i;
+                            HistInterKernel hik = {
+                                .id1 = j,
+                                .id2 = k,
+                                .frame = frame,
+                                .value = hik_val
+                            };
+                            frame_hiks.push_back(hik);
+                        }
+                    }
+                }
+            }
+            int connections_needed = min_detections_in_segment_cnt - detections_with_next_in_frame;
+            if (!connections_needed)
+                continue;
+            std::sort(frame_hiks.begin(), frame_hiks.end(), hik_cmp);
+            for (auto hik: frame_hiks)
+            {
+                if (nodes[start + i][hik.id1].next_node_id == -1 && nodes[start + i + 1][hik.id2].prev_node_id == -1)
+                {
+                    nodes[start + i][hik.id1].next_node_id = hik.id2;
+                    nodes[start + i + 1][hik.id2].prev_node_id = hik.id1;
+                    connections_needed--;
+                    if (!connections_needed)
+                        break;
+                }
+            } 
         }
-        print_nodes(nodes);
+        // after the first step we want to represent each segment by a list of nodes
+        // print_nodes(nodes);
     }
 
 
