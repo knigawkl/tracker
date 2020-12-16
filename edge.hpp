@@ -32,5 +32,5 @@ private:
     static constexpr double const MOTION_COEFF = 0.001;
     static constexpr int const CV_COMP_INTERSECT = 3;
     double get_appearance_cost(const cv::Mat &start, const cv::Mat &end);
-    double get_motion_cost(const Detection &start, const Detection &end);
+    double get_motion_cost(const Box &start, const Box &end);
 };

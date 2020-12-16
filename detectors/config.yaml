@@ -2,7 +2,7 @@ ssd:
   confidence_threshold: 0.15
   nms_max_output_size: 400
   top_k: 200
-  iou_threshold: 0.6
+  iou_threshold: 0.4
   weights: '/home/lk/Desktop/inz/praca-inzynierska/gmcp-tracker-cpp-python/detectors/ssd/data/ssd512-hollywood-trainval-bs_16-lr_1e-05-scale_pascal-epoch-187-py3.6.h5'
 yolo:
   cuda_devices_count: 1

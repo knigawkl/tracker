@@ -15,7 +15,7 @@ void Node::set_histogram(const cv::Mat &frame)
 void Node::print() const
 {
     std::cout << "node_id: " << node_id
-              << ", frame_id: " << cluster_id << ", ";
+              << ", frame_id: " << cluster_id << ", next: " << next_node_id << ", prev: " << prev_node_id << ", ";
     coords.print();
 }
 

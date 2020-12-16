@@ -14,3 +14,17 @@ struct Location
         std::cout << "x: " << x << ", y: " << y << std::endl;
     }
 };
+
+struct HistInterKernel
+{
+    int id1, id2;
+    int frame;
+    double value;
+    void print() const
+    {
+        std::cout << "id1: " << id1 
+                  << ", id2: " << id2  
+                  << ", frame: " << frame
+                  << ", value: " << value << std::endl;
+    }
+};

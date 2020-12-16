@@ -20,6 +20,7 @@
 #include "video.hpp"
 #include "tracklet.hpp"
 #include "node.hpp"
+#include "iou.hpp"
 #include "edge.hpp"
 
 #include <opencv2/opencv.hpp>
@@ -122,6 +123,7 @@ vector<Node> load_cluster_nodes(std::string csv_file, int video_w, int video_h,
     // one bounding box a line
     int id = 0;
     int x_min, y_min, x_max, y_max, x_center, y_center, height, width;
+    float area;
     while(std::getline(f, line))
     {
         std::stringstream ss(line); 
@@ -145,11 +147,12 @@ vector<Node> load_cluster_nodes(std::string csv_file, int video_w, int video_h,
             x_max = video_w;
         if (y_max > video_h)
             y_max = video_h;         
-        x_center = (x_min + x_max) / 2;
-        y_center = (y_min + y_max) / 2;
+        x_center = (x_min + x_max) / 2;  // todo mv this to Node
+        y_center = (y_min + y_max) / 2;  // todo mv this to Node
         height = y_max - y_min;
         width = x_max - x_min;
-        Detection d = {
+        area = height * width;
+        Box d = {
             .x = x_center,
             .y = y_center,
             .id = id,
@@ -158,7 +161,8 @@ vector<Node> load_cluster_nodes(std::string csv_file, int video_w, int video_h,
             .x_max = x_max,
             .y_max = y_max,
             .height = height,
-            .width = width
+            .width = width,
+            .area = area
         };
         nodes.push_back(Node(d, frame, id, frame_id));
         id++; 
@@ -375,7 +379,7 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
 //     return tracklets;
 // }
 
-void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
+void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
 {
     constexpr int const line_thickness = 2; 
     cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
@@ -508,6 +512,29 @@ void draw_rectangle(const Detection &d, const cv::Scalar &color, cv::Mat &img)
 //     }
 // }
 
+int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_size, int seg_counter, int segment_cnt, int start)
+{
+    int min_detections_in_segment_cnt = 1000;
+    for (int i = 0; i < segment_size; i++)
+    {
+        int detections_in_frame_cnt = nodes[start+i].size();
+        if (detections_in_frame_cnt < min_detections_in_segment_cnt)
+            min_detections_in_segment_cnt = detections_in_frame_cnt;
+    }
+    std::cout << "Min detections in segment " << seg_counter+1 << "/" << segment_cnt << ": " << min_detections_in_segment_cnt << std::endl;
+    return min_detections_in_segment_cnt;
+}
+
+bool iou_cmp(const IOU& a, const IOU& b)
+{
+    return a.value > b.value;
+}
+
+bool hik_cmp(const HistInterKernel& a, const HistInterKernel& b)
+{
+    return a.value < b.value;
+}
+
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -534,6 +561,94 @@ int main(int argc, char **argv) {
     vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h); // vector of Nodes (detections) for each frame
     int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
     auto colors = get_colors(max_nodes_per_cluster);
+
+    for (int seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
+    {
+        std::cout << std::endl << "Tracking in segment " << seg_counter+1 << "/" << segment_cnt << std::endl;
+        // first we build a graph per segment
+        // the graph has n clusters, where n is the number of frames in one segment
+        // firstly, all nodes that are not from the same cluster are connected
+        // but then we use IOU to determine which nodes from consequent frames must be the same object
+        // then we can get rid of a lot of edges that are not needed anymore
+        // if we struggled to find the solution using iou, we calculate the hik cost and try to minimize cost
+
+        // at this stage there is a strong need of fighting with occlusions
+
+        int start = seg_counter * segment_size;
+        int min_detections_in_segment_cnt = get_min_detections_in_segment_cnt(nodes, segment_size, seg_counter, segment_cnt, start);
+
+        vector<IOU> ious;
+        // get the ious of subsequent frame detections
+        for (int i = 0; i < segment_size - 1; i++)
+        {
+            for (int j = 0; j < nodes[start + i].size(); j++)  // detection id in the current frame
+            {
+                for (int k = 0; k < nodes[start + i + 1].size(); k++)  // detection id in the next frame
+                {
+                    
+                    float val = nodes[start + i][j].coords.calc_iou(nodes[start + i + 1][k].coords);
+                    if (val > 0)  // this should be some threshold rather than zero
+                    { 
+                        IOU iou = {
+                            .frame = start + i,
+                            .id1 = j,
+                            .id2 = k,
+                            .value = val
+                        };
+                        ious.push_back(iou);
+                    }
+                }
+            }
+        }
+        std::sort(ious.begin(), ious.end(), iou_cmp);
+        for(auto const& iou: ious)
+        {
+            if (nodes[iou.frame][iou.id1].next_node_id == -1 && nodes[iou.frame + 1][iou.id2].prev_node_id == -1)  // if next node not set as yet
+            {
+                iou.print();
+                nodes[iou.frame][iou.id1].next_node_id = iou.id2;
+                nodes[iou.frame + 1][iou.id2].prev_node_id = iou.id1;
+            }
+        }
+
+        // for (int i = 0; i < segment_size - 1; i++)
+        // {
+        //     int detections_with_next_in_frame = 0;
+        //     vector<HistInterKernel> frame_hiks;
+        //     for (int j = 0; j < nodes[start + i].size(); j++)  // detection id in the current frame
+        //     {
+        //         if (nodes[start + i][j].next_node_id > -1)
+        //             detections_with_next_in_frame++;
+        //         else
+        //         {
+        //             // if the detection does not have next pointer, then we calculate its hiks with detections from next frame that lack prev pointer
+        //             for (int k = 0; k < nodes[start + i + 1].size(); k++)
+        //             {
+        //                 if (nodes[start + i + 1][k].prev_node_id == -1)
+        //                 {
+        //                     double hik_val = cv::compareHist(nodes[start + i][j].histogram, 
+        //                                                      nodes[start + i + 1][k].histogram,
+        //                                                      3); // CV_COMP_INTERSECT
+        //                     int frame = start + i;
+        //                     HistInterKernel hik = {
+        //                         .id1 = j,
+        //                         .id2 = k,
+        //                         .frame = frame,
+        //                         .value = hik_val
+        //                     };
+        //                     frame_hiks.push_back(hik);
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     int connections_needed = min_detections_in_segment_cnt - detections_with_next_in_frame;
+        //     std::sort(frame_hiks.begin(), frame_hiks.end(), hik_cmp);
+        //     for (auto hik: frame_hiks)
+        //         hik.print();
+        }
+        print_nodes(nodes);
+    }
+
 
     // vector2d<Edge> edges = get_edges()
 
