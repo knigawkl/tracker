@@ -187,145 +187,6 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
     return nodes;
 }
 
-// HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks)
-// {
-//     double maxi = std::numeric_limits<double>::max();
-//     HistInterKernel mini = {
-//         .id1 = -1,
-//         .id2 = -1,
-//         .value = maxi
-//     };
-//     for (auto hik: hiks)
-//     {
-//         if (hik.value < mini.value)
-//         {
-//             mini = hik;
-//         }
-//     }
-//     return mini;
-// }
-
-// HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int id1)
-// {
-//     double maxi = std::numeric_limits<double>::max();
-//     HistInterKernel mini = {
-//         .id1 = -1,
-//         .id2 = -1,
-//         .value = maxi
-//     };
-//     for (auto hik: hiks)
-//     {   
-//         if (hik.id1 == id1 && hik.value < mini.value)
-//         {
-//             mini = hik;
-//         }
-//     }
-//     return mini;
-// }
-
-// HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, const vector<int> &used)
-// {
-//     double maxi = std::numeric_limits<double>::max();
-//     HistInterKernel mini = {
-//         .id1 = -1,
-//         .id2 = -1,
-//         .value = maxi
-//     };
-//     for (auto hik: hiks)
-//     {
-//         if (hik.value < mini.value && !std::count(used.begin(), used.end(), hik.id2))
-//         {
-//             mini = hik;
-//         }
-//     }
-//     return mini;
-// }
-
-// HistInterKernel get_cheapest(const vector<HistInterKernel> &hiks, int id1, const vector<int> &used)
-// {
-//     double maxi = std::numeric_limits<double>::max();
-//     HistInterKernel mini = {
-//         .id1 = -1,
-//         .id2 = -1,
-//         .value = maxi
-//     };
-//     for (auto hik: hiks)
-//     {   
-//         if (hik.id1 == id1 && hik.value < mini.value && !std::count(used.begin(), used.end(), hik.id2))
-//         {
-//             mini = hik;
-//         }
-//     }
-//     return mini;
-// }
-
-// vector<int> get_initial_detection_path(const vector2d<HistInterKernel> &net_cost,
-//                                        int seg_size, int seg_counter)
-// {
-//     // returns ids of detections in subsequent frames that form a brute-force solution
-//     vector<int> detection_ids;
-//     detection_ids.reserve(seg_size); // one detection from each frame in a segment
-
-//     int start = seg_counter * seg_size;
-//     auto first_hik = get_cheapest(net_cost[start]);
-//     detection_ids.push_back(first_hik.id1);
-//     detection_ids.push_back(first_hik.id2);
-
-//     for (int i = 1; i < seg_size - 1; i++)
-//     {
-//         auto hik = get_cheapest(net_cost[start+i], detection_ids.back());
-//         detection_ids.push_back(hik.id2);
-//     }
-//     return detection_ids;
-// }
-
-// vector<Detection> get_detection_path(const vector2d<Detection> &detections,
-//                                      const vector<int> &detection_ids, int seg_counter)
-// {
-//     vector<Detection> path;
-//     int start = seg_counter * detection_ids.size();
-//     for (int i = 0; i < detection_ids.size(); i++) // for each detection id == for each frame
-//     {
-//         // find Detection with desired id and push it back to the resulting vector
-//         for (auto detection: detections[start+i])
-//         {
-//             if (detection.id == detection_ids[i])
-//                 path.push_back(detection);
-//         }
-//     }
-//     return path;
-// }
-
-// void remove_path(vector2d<Detection> &detections, const vector<int> &detection_ids, int seg_counter)
-// {
-//     int start = seg_counter * detection_ids.size();
-//     for (int i = 0; i < detection_ids.size(); i++)
-//     {
-//         for (int j = 0; j < detections[start+i].size(); j++)
-//         {
-//             if (detections[start+i][j].id == detection_ids[i])
-//                 detections[start+i].erase(detections[start+i].begin() + j);
-//         }
-//     }   
-// }
-
-// void remove_path(vector2d<HistInterKernel> &net_cost, const vector<int> &detection_ids, int seg_counter)
-// {
-//     int start = seg_counter * detection_ids.size();
-//     // for each frame except the last one in the segment
-//     for (int i = 0; i < detection_ids.size() - 1; i++)
-//     {
-//         vector<HistInterKernel> tmp;
-//         for (int j = 0; j < net_cost[start+i].size(); j++)
-//         {
-//             if (net_cost[start+i][j].id1 != detection_ids[i] // remove hiks starting at used detection
-//                 && net_cost[start+i][j].id2 != detection_ids[i+1]) // remove hiks leading to used detection
-//                 tmp.push_back(net_cost[start+i][j]);
-//         }
-//         net_cost[start+i] = tmp;
-//     }   
-// }
-
 // bool is_any_frame_without_detections(vector2d<Detection> &detections, int seg_counter, int seg_size)
 // {
 //     int start = seg_counter * seg_size;
@@ -562,6 +423,7 @@ int main(int argc, char **argv) {
     int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
     auto colors = get_colors(max_nodes_per_cluster);
 
+    vector2d<Tracklet> tracklets(segment_size, vector<Tracklet>());
     for (int seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
     {
         std::cout << std::endl << "Tracking in segment " << seg_counter+1 << "/" << segment_cnt << std::endl;
@@ -660,9 +522,36 @@ int main(int argc, char **argv) {
                 }
             } 
         }
-        // after the first step we want to represent each segment by a list of nodes
-        // print_nodes(nodes);
+
+        // get segment's tracklets
+        for (int i = 0; i < nodes[start].size(); i++)  // for each detection in the first frame of the segment
+        {
+            vector<int> tracklet_ids;
+            Node node = nodes[start][i];
+            tracklet_ids.push_back(i);
+            int next = node.next_node_id;
+
+            for (int j = 1; j < segment_size; j++)
+            {
+                node = nodes[start + j][next];
+                tracklet_ids.push_back(node.node_id);
+                next = node.next_node_id;
+                if (next == -1)
+                    break;
+            }
+
+            if (tracklet_ids.size() != segment_size)
+                continue;
+
+            vector<Node> tracklet_nodes;
+            for (int j = 0; j < segment_size; j++)
+            {
+                tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
+            }
+            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
+        }
     }
+    // powinienem mieć możliwość narysowania dowolnego trackletu
 
 
     // vector2d<Edge> edges = get_edges()
