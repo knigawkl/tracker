@@ -8,6 +8,9 @@ from run_ssd import SSDDetector
 from run_yolo import YOLODetector
 from utils.logger import logger
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 
 def load_args():
     p = argparse.ArgumentParser()

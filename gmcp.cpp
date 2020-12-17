@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <iostream>
+#include <thread>  
 #include <fstream> 
 #include <sstream>
 #include <cstdlib>
@@ -408,12 +409,14 @@ int main(int argc, char **argv) {
     make_tmp_dirs(tmp_folder);
 
     cv::VideoCapture in_cap(in_video);
+    std::cout << "OpenCV version : " << CV_VERSION << std::endl;
     int video_w = in_cap.get(cv::CAP_PROP_FRAME_WIDTH);
     int video_h = in_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
     const int segment_cnt = frame_cnt / segment_size;
     const std::string tmp_video = tmp_folder + "/input.mp4";
     prepare_tmp_video(in_cap, frame_cnt, tmp_folder, in_video, tmp_video);
+    // in_cap.release();  // this should be automatic
 
     auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
@@ -421,9 +424,10 @@ int main(int argc, char **argv) {
 
     vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h); // vector of Nodes (detections) for each frame
     int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
-    auto colors = get_colors(max_nodes_per_cluster);
+    // auto colors = get_colors(max_nodes_per_cluster);
 
     vector2d<Tracklet> tracklets(segment_size, vector<Tracklet>());
+   
     for (int seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
     {
         std::cout << std::endl << "Tracking in segment " << seg_counter+1 << "/" << segment_cnt << std::endl;
@@ -530,6 +534,8 @@ int main(int argc, char **argv) {
             Node node = nodes[start][i];
             tracklet_ids.push_back(i);
             int next = node.next_node_id;
+            if (next == -1)
+                continue;
 
             for (int j = 1; j < segment_size; j++)
             {
@@ -548,7 +554,7 @@ int main(int argc, char **argv) {
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
-            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
+            // tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
         }
     }
     // powinienem mieć możliwość narysowania dowolnego trackletu

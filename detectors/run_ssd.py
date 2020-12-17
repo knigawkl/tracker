@@ -10,6 +10,7 @@ from ssd.keras_loss_function.keras_ssd_loss import SSDLoss
 from utils.logger import logger
 from base import BaseDetector
 
+
 IMG_HEIGHT = 512
 IMG_WIDTH = 512
 
