@@ -241,13 +241,6 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
 //     return tracklets;
 // }
 
-void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
-{
-    constexpr int const line_thickness = 2; 
-    cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
-    cv::rectangle(img, rect, color, line_thickness);
-}
-
 // void set_tracklets_net_costs(vector2d<Tracklet> &tracklets, int segment_cnt)
 // {
 //     std::cout << std::endl;
@@ -373,6 +366,25 @@ void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
 //         cv::imwrite(path, img);
 //     }
 // }
+
+
+void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
+{
+    constexpr int const line_thickness = 2; 
+    cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
+    cv::rectangle(img, rect, color, line_thickness);
+}
+
+void draw_trajectory(const vector<Node> &trajectory, std::string tmp_folder, cv::Scalar color)
+{
+    for (Node node: trajectory)
+    {
+        auto path = get_frame_path(node.cluster_id, tmp_folder);
+        cv::Mat img = cv::imread(path);
+        draw_rectangle(node.coords, color, img);
+        cv::imwrite(path, img);
+    }
+}
 
 int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_size, int seg_counter, int segment_cnt, int start)
 {
@@ -557,7 +569,18 @@ int main(int argc, char **argv) {
             tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
         }
     }
-    // powinienem mieć możliwość narysowania dowolnego trackletu
+    print_tracklets(tracklets, segment_cnt);
+
+    // print first tracklet just for testing
+    for (int i = 0; i< 3; i++)
+    {
+        uint8_t r, g, b;
+        b = rand() % 256;
+        r = rand() % 256;
+        g = rand() % 256;
+        draw_trajectory(tracklets[0][i].detection_track, tmp_folder, cv::Scalar(b, g, r));
+    }
+
 
 
     // vector2d<Edge> edges = get_edges()
@@ -585,7 +608,7 @@ int main(int argc, char **argv) {
     // vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    // merge_frames(tmp_folder, out_video);
+    merge_frames(tmp_folder, out_video);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();

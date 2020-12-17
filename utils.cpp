@@ -79,19 +79,19 @@ void print_usage_info()
     std::cout << usage_info << std::endl;
 }
 
-// void print_detection_path(const std::vector<Detection> &path)
-// {
-//     if (path.size())
-//     {
-//         for (int i = 0; i < path.size()-1; i++)
-//         {
-//             std::cout << "(" << path[i].x << "," << path[i].y << ")->";
-//         }
-//         std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
-//     } else {
-//         std::cout << "Not enough detections to form a tracklet" << std::endl;
-//     }
-// }
+void print_detection_path(const std::vector<Node> &path)
+{
+    if (path.size())
+    {
+        for (int i = 0; i < path.size()-1; i++)
+        {
+            std::cout << "(" << path[i].coords.x << "," << path[i].coords.y << ")->";
+        }
+        std::cout << "(" << path.back().coords.x << "," << path.back().coords.y << ")" << std::endl;
+    } else {
+        std::cout << "Not enough detections to form a tracklet" << std::endl;
+    }
+}
 
 // void print_detections_left_cnt(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
 // {
@@ -165,19 +165,19 @@ void print_nodes(const vector2d<Node> &nodes)
 //     std::cout << std::endl;
 // }
 
-// void print_tracklets(const vector2d<Tracklet> &tracklets, int segment_cnt)
-// {
-//     std::cout << std::endl;
-//     for (int i = 0; i < segment_cnt; i++)
-//     {
-//         std::cout << "Tracklets found in segment " << i+1 << "/" << segment_cnt << std::endl;
-//         for (int j = 0; j < tracklets[i].size(); j++)
-//         {
-//             std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
-//             print_detection_path(tracklets[i][j].detections);
-//         }
-//     }
-// }
+void print_tracklets(const vector2d<Tracklet> &tracklets, int segment_cnt)
+{
+    std::cout << std::endl;
+    for (int i = 0; i < segment_cnt; i++)
+    {
+        std::cout << "Tracklets found in segment " << i+1 << "/" << segment_cnt << std::endl;
+        for (int j = 0; j < tracklets[i].size(); j++)
+        {
+            std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
+            print_detection_path(tracklets[i][j].detection_track);
+        }
+    }
+}
 
 // void print_tracklet_center(const Location &center, int segment_ctr, int tracklet_ctr)
 // {
