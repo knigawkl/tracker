@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
     int max_nodes_per_cluster = get_max_nodes_per_cluster(nodes); // max detections found in one frame
     // auto colors = get_colors(max_nodes_per_cluster);
 
-    vector2d<Tracklet> tracklets(segment_size, vector<Tracklet>());
+    vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
    
     for (int seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
     {
@@ -554,7 +554,7 @@ int main(int argc, char **argv) {
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
-            // tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
+            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
         }
     }
     // powinienem mieć możliwość narysowania dowolnego trackletu
