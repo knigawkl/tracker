@@ -5,6 +5,9 @@ fixtures/*
 detectors/ssd/data/*
 detectors/yolo/data/*
 .vscode/
+detectors/fchd/checkpoints/*
+detectors/test_imgs/* 
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c++

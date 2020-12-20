@@ -1,5 +1,5 @@
-# gmcp-tracker-cpp-python
-A custom C++/Python GMCP tracking implementation
+# Multi object tracking 
+A custom C++/Python MOT implementation
 
 Build with CMake.
 > mkdir build \

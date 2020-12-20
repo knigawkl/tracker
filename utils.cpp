@@ -1,9 +1,8 @@
 #include <sstream>
 #include <iostream>
-#include <vector>
 
 #include "utils.hpp"
-#include "tracklet.hpp"
+#include "tracker.hpp"
 
 void make_tmp_dirs(std::string tmp_folder) 
 {
@@ -43,7 +42,7 @@ void cp(std::string what, std::string where)
 
 vector<cv::Scalar> get_colors(int vec_len)
 {    
-    std::vector<cv::Scalar> colors;
+    vector<cv::Scalar> colors;
     colors.reserve(vec_len);
     uint8_t r, g, b;
     for (int i = 0; i < vec_len; i++)
@@ -78,41 +77,6 @@ void print_usage_info()
     std::cout << usage_info << std::endl;
 }
 
-void print_detection_path(const std::vector<Detection> &path)
-{
-    if (path.size())
-    {
-        for (int i = 0; i < path.size()-1; i++)
-        {
-            std::cout << "(" << path[i].x << "," << path[i].y << ")->";
-        }
-        std::cout << "(" << path.back().x << "," << path.back().y << ")" << std::endl;
-    } else {
-        std::cout << "Not enough detections to form a tracklet" << std::endl;
-    }
-}
-
-void print_detections_left_cnt(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
-{
-    int result = 0;
-    int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size; i++)
-        result += centers[start+i].size();
-    std::cout << "Detections left in segment: " << result << std::endl;
-}
-
-void print_detections_left_ids(const std::vector<std::vector<Detection>> &centers, int seg_counter, int seg_size)
-{
-    int start = seg_counter * seg_size;
-    for (int i = 0; i < seg_size; i++)
-    {
-        std::cout << "ids of detections left from frame " << i << ": ";
-        for (int j = 0; j < centers[start+i].size(); j++)
-            std::cout << centers[start+i][j].id << " ";
-        std::cout << std::endl;
-    }
-}
-
 void print_parameters(int segment_size, std::string in_video, std::string out_video, 
                       std::string detector, std::string detector_cfg, std::string tmp_folder)
 {
@@ -136,68 +100,4 @@ void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono:
     std::cout << "Detection took = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
             << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
             << "[s])" << std::endl;
-}
-
-void print_detections(const vector2d<Detection> &detections)
-{
-    for (int i = 0; i < detections.size(); i++)
-    {
-        std::cout << detections[i].size() << " detections in frame " << i << std::endl;
-        for (int j = 0; j < detections[i].size(); j++)
-        {
-            detections[i][j].print();
-        }
-    }
-}
-
-void print_net_cost(const vector2d<HistInterKernel> &net_cost)
-{
-    // for debug purposes only
-    // for (auto frame: net_cost)
-    for (int i = 0; i < net_cost.size(); i++)
-    {
-        std::cout << "========== net cost frame " << i << " ==========" << std::endl;
-        for (auto hik: net_cost[i])
-            hik.print();
-    }
-
-    std::cout << std::endl;
-}
-
-void print_tracklets(const vector2d<Tracklet> &tracklets, int segment_cnt)
-{
-    std::cout << std::endl;
-    for (int i = 0; i < segment_cnt; i++)
-    {
-        std::cout << "Tracklets found in segment " << i+1 << "/" << segment_cnt << std::endl;
-        for (int j = 0; j < tracklets[i].size(); j++)
-        {
-            std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
-            print_detection_path(tracklets[i][j].detections);
-        }
-    }
-}
-
-void print_tracklet_center(const Location &center, int segment_ctr, int tracklet_ctr)
-{
-    std::cout << "Segment: " << segment_ctr+1 << ", tracklet: " << tracklet_ctr+1 << ", center: ";
-    center.print();
-}
-
-void print_tracklets_net_costs(const vector2d<Tracklet> &tracklets, int segment_cnt)
-{
-    std::cout << std::endl;
-    for (int i = 0; i < segment_cnt - 1; i++)
-    {
-        std::cout << "Net costs in segment " << i+1 << "/" << segment_cnt << std::endl;
-        for (int j = 0; j < tracklets[i].size(); j++)
-        {
-            std::cout << "Net costs for tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
-            // for (auto edge_cost: tracklets[i][j].net_cost)
-            for (int k = 0; k < tracklets[i][j].net_cost.size(); k++)
-            {
-                tracklets[i][j].net_cost[k].print();
-            }
-        }
-    }
 }

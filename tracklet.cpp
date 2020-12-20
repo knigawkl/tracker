@@ -1,14 +1,14 @@
 #include "tracklet.hpp"
 
-void Tracklet::set_middle_point(const vector<Detection> &detection_track)
+void Tracklet::set_middle_point()
 {
     // spatial location of a tracklet is defined as the middle point of the tracklet
     int x_sum = 0;
     int y_sum = 0;
     for (auto detection: detection_track)
     {
-        x_sum += detection.x;
-        y_sum += detection.y;
+        x_sum += detection.coords.x;
+        y_sum += detection.coords.y;
     }
     int x_center = x_sum / detection_track.size();
     int y_center = y_sum / detection_track.size();
@@ -19,33 +19,34 @@ void Tracklet::set_middle_point(const vector<Detection> &detection_track)
     center = middle_point; 
 }
 
-void Tracklet::set_histogram(const vector2d<cv::Mat> &histograms, 
-                             int seg_ctr, int seg_size)
+void Tracklet::set_histogram()
 {
     // tracklet's appearance feature is the mean of color histograms of detections from the tracklet
-    vector<int> detection_ids = get_detection_ids();
-
-    int start = seg_ctr * seg_size;
+    int seg_size = detection_track.size();
     double anti_overflow_coeff = 1.0 / seg_size;
-    auto tracklet_histogram = histograms[start][detection_ids[0]] * anti_overflow_coeff;
+    auto tracklet_histogram = detection_track[0].histogram * anti_overflow_coeff;
     
-    for (int i = 1; i < detection_ids.size(); i++)
-        tracklet_histogram += histograms[start+i][detection_ids[i]] * anti_overflow_coeff;
+    for (int i = 1; i < detection_track.size(); i++)
+        tracklet_histogram += detection_track[i].histogram * anti_overflow_coeff;
     histogram = tracklet_histogram;
-}
-
-vector<int> Tracklet::get_detection_ids() const
-{
-    vector<int> detection_ids;
-    for (auto detection: detections)
-    {
-        detection_ids.push_back(detection.id);
-    }
-    return detection_ids;
 }
 
 void Tracklet::print() const
 {
-    std::cout << "Tracklet: " << id << ", trajectory_id: " << trajectory_id << ", center: ";
+    std::cout << "Tracklet: " << "center: ";
     center.print();
+}
+
+void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
+{
+    std::cout << std::endl;
+    for (int i = 0; i < tracklets.size(); i++)
+    {
+        std::cout << "Tracklets found in segment " << i+1 << "/" << tracklets.size() << std::endl;
+        for (int j = 0; j < tracklets[i].size(); j++)
+        {
+            std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
+            Node::print_detection_path(tracklets[i][j].detection_track);
+        }
+    }
 }
