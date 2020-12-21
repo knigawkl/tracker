@@ -280,7 +280,8 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
         for (int i = 0; i < segment_size - 1; i++)  // for each frame in the segment except for the last one
         {
             int detections_with_next_in_frame = 0;
-            vector<HistInterKernel> frame_hiks;
+            // vector<HistInterKernel> frame_hiks;
+            vector<Edge> frame_edges;
             for (int j = 0; j < nodes[start + i].size(); j++)  // for each detection in the frame
             {
                 if (nodes[start + i][j].next_node_id > -1)  // if the detection already has next pointer go to the next detection
@@ -292,17 +293,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
                     {
                         if (nodes[start + i + 1][k].prev_node_id == -1)
                         {
-                            double hik_val = cv::compareHist(nodes[start + i][j].histogram, 
-                                                             nodes[start + i + 1][k].histogram,
-                                                             3); // CV_COMP_INTERSECT
-                            int frame = start + i;
-                            HistInterKernel hik = {
-                                .id1 = j,
-                                .id2 = k,
-                                .frame = frame,
-                                .value = hik_val
-                            };
-                            frame_hiks.push_back(hik);
+                            frame_edges.push_back(Edge(nodes[start + i][j], nodes[start + i + 1][k]));
                         }
                     }
                 }
@@ -310,13 +301,13 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
             int connections_needed = min_detections_in_segment_cnt - detections_with_next_in_frame;
             if (!connections_needed)
                 continue;
-            std::sort(frame_hiks.begin(), frame_hiks.end(), HistInterKernel::hik_cmp);
-            for (auto hik: frame_hiks)
+            std::sort(frame_edges.begin(), frame_edges.end(), Edge::edge_cmp);
+            for (auto e: frame_edges)
             {
-                if (nodes[start + i][hik.id1].next_node_id == -1 && nodes[start + i + 1][hik.id2].prev_node_id == -1)
+                if (nodes[start + i][e.start_node_id].next_node_id == -1 && nodes[start + i + 1][e.end_node_id].prev_node_id == -1)
                 {
-                    nodes[start + i][hik.id1].next_node_id = hik.id2;
-                    nodes[start + i + 1][hik.id2].prev_node_id = hik.id1;
+                    nodes[start + i][e.start_node_id].next_node_id = e.end_node_id;
+                    nodes[start + i + 1][e.end_node_id].prev_node_id = e.start_node_id;
                     connections_needed--;
                     if (!connections_needed)
                         break;
@@ -390,14 +381,14 @@ int main(int argc, char **argv) {
     Tracklet::print_tracklets(tracklets);
 
     // print first tracklet just for testing
-    for (int i = 0; i< 3; i++)
-    {
-        uint8_t r, g, b;
-        b = rand() % 256;
-        r = rand() % 256;
-        g = rand() % 256;
-        draw_trajectory(tracklets[0][i].detection_track, tmp_folder, cv::Scalar(b, g, r));
-    }
+    // for (int i = 0; i< 3; i++)
+    // {
+    //     uint8_t r, g, b;
+    //     b = rand() % 256;
+    //     r = rand() % 256;
+    //     g = rand() % 256;
+    //     draw_trajectory(tracklets[0][i].detection_track, tmp_folder, cv::Scalar(b, g, r));
+    // }
     
     // vector2d<Edge> edges = get_edges()
 

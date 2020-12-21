@@ -13,7 +13,6 @@
 class Tracklet
 {
 public:
-    // int id;
     // int trajectory_id = -1;
     vector<Node> detection_track;
     Location center;
@@ -21,7 +20,6 @@ public:
 
     Tracklet(const vector<Node> &path)
     {
-        // id = tracklet_id;
         detection_track = path;
         set_middle_point();
         set_histogram();
