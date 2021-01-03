@@ -17,6 +17,8 @@ public:
     Location center;
     cv::Mat histogram;
     bool is_end_of_traj;
+    bool is_start_of_traj;
+
 
     Tracklet(const vector<Node> &path, int video_w, int video_h)
     {
@@ -24,6 +26,7 @@ public:
         set_middle_point();
         set_histogram();
         is_end_of_traj =  is_end_of_trajectory(video_w, video_h);
+        is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
         print();
     }
     void print() const;
@@ -34,4 +37,5 @@ private:
     void set_middle_point();
     void set_histogram();
     bool is_end_of_trajectory(int video_w, int video_h);
+    bool is_start_of_trajectory(int video_w, int video_h);
 };

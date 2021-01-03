@@ -33,16 +33,28 @@ void Tracklet::set_histogram()
 
 bool Tracklet::is_end_of_trajectory(int video_w, int video_h)
 {
-    int x_diff_sum = 0;
-    int y_diff_sum = 0; 
-    x_diff_sum += detection_track.back().coords.x - detection_track[0].coords.x;
-    y_diff_sum += detection_track.back().coords.y - detection_track[0].coords.y;
+    int x_diff_sum = detection_track.back().coords.x - detection_track[0].coords.x;
+    int y_diff_sum = detection_track.back().coords.y - detection_track[0].coords.y;
     int next_x_pred = detection_track.back().coords.x + x_diff_sum;  // x position prediction at the end of the next tracklet
     int next_y_pred = detection_track.back().coords.y + y_diff_sum;  // y position prediction at the end of the next tracklet
     std::cout << "Next tracklet predicted to end at: (" << next_x_pred << "," << next_y_pred << ")" << std::endl;
     if ((next_x_pred < 0) || (next_x_pred > video_w))
         return true;
     if ((next_y_pred < 0) || (next_y_pred > video_h))
+        return true;
+    return false;
+}
+
+bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
+{
+    int x_diff_sum = detection_track.back().coords.x - detection_track[0].coords.x;
+    int y_diff_sum = detection_track.back().coords.y - detection_track[0].coords.y;
+    int prev_x_pred = detection_track.front().coords.x - x_diff_sum;  // x position prediction at the start of the prev tracklet
+    int prev_y_pred = detection_track.front().coords.y - y_diff_sum;  // y position prediction at the start of the prev tracklet
+    std::cout << "Previous tracklet predicted to start at: (" << prev_x_pred << "," << prev_y_pred << ")" << std::endl;
+    if ((prev_x_pred < 0) || (prev_x_pred > video_w))
+        return true;
+    if ((prev_y_pred < 0) || (prev_y_pred > video_h))
         return true;
     return false;
 }
