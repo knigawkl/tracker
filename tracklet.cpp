@@ -31,8 +31,10 @@ void Tracklet::set_histogram()
     histogram = tracklet_histogram;
 }
 
-bool Tracklet::is_end_of_trajectory(int video_w, int video_h)
+bool Tracklet::is_end_of_trajectory(int video_w, int video_h, int video_frame_cnt)
 {
+    if (detection_track.back().cluster_id == (video_frame_cnt - 1))
+        return true;
     int x_diff_sum = detection_track.back().coords.x - detection_track[0].coords.x;
     int y_diff_sum = detection_track.back().coords.y - detection_track[0].coords.y;
     int next_x_pred = detection_track.back().coords.x + x_diff_sum;  // x position prediction at the end of the next tracklet
@@ -47,6 +49,8 @@ bool Tracklet::is_end_of_trajectory(int video_w, int video_h)
 
 bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
 {
+    if (detection_track.front().cluster_id == 0)
+        return true;
     int x_diff_sum = detection_track.back().coords.x - detection_track[0].coords.x;
     int y_diff_sum = detection_track.back().coords.y - detection_track[0].coords.y;
     int prev_x_pred = detection_track.front().coords.x - x_diff_sum;  // x position prediction at the start of the prev tracklet
@@ -75,6 +79,8 @@ void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
         {
             std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
             Node::print_detection_path(tracklets[i][j].detection_track);
+            std::cout << "Is end of trajectory: " << tracklets[i][j].is_end_of_traj << std::endl;
+            std::cout << "Is start of trajectory: " << tracklets[i][j].is_start_of_traj << std::endl;
         }
     }
 }

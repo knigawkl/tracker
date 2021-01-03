@@ -221,7 +221,7 @@ int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_s
     return min_detections_in_segment_cnt;
 }
 
-vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt, int video_w, int video_h)
+vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt, int video_w, int video_h, int video_frame_cnt)
 {
     vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
 
@@ -342,7 +342,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
-            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_w, video_h));
+            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_w, video_h, video_frame_cnt));
         }
     }
     return tracklets;
@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
     int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes); // max detections found in one frame
     // auto colors = get_colors(max_nodes_per_cluster);
 
-    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h);
+    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
 
     // print first tracklet just for testing

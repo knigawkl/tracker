@@ -20,12 +20,12 @@ public:
     bool is_start_of_traj;
 
 
-    Tracklet(const vector<Node> &path, int video_w, int video_h)
+    Tracklet(const vector<Node> &path, int video_w, int video_h, int video_frame_cnt)
     {
         detection_track = path;
         set_middle_point();
         set_histogram();
-        is_end_of_traj =  is_end_of_trajectory(video_w, video_h);
+        is_end_of_traj =  is_end_of_trajectory(video_w, video_h, video_frame_cnt);
         is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
         print();
     }
@@ -36,6 +36,6 @@ public:
 private:
     void set_middle_point();
     void set_histogram();
-    bool is_end_of_trajectory(int video_w, int video_h);
+    bool is_end_of_trajectory(int video_w, int video_h, int video_frame_cnt);
     bool is_start_of_trajectory(int video_w, int video_h);
 };
