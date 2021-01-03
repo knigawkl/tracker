@@ -221,7 +221,7 @@ int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_s
     return min_detections_in_segment_cnt;
 }
 
-vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt)
+vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt, int video_w, int video_h)
 {
     vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
 
@@ -342,7 +342,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
-            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes));
+            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_w, video_h));
         }
     }
     return tracklets;
@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
     int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes); // max detections found in one frame
     // auto colors = get_colors(max_nodes_per_cluster);
 
-    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt);
+    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h);
     Tracklet::print_tracklets(tracklets);
 
     // print first tracklet just for testing
@@ -389,26 +389,6 @@ int main(int argc, char **argv) {
     //     g = rand() % 256;
     //     draw_trajectory(tracklets[0][i].detection_track, tmp_folder, cv::Scalar(b, g, r));
     // }
-    
-    // vector2d<Edge> edges = get_edges()
-
-
-    // vector2d<HistInterKernel> net_cost = get_net_cost(frame_cnt, histograms); // stop using net_cost naming; perform appearance_cost calculation after all nodes are initialised
-
-// how to solve gmcp?
-// 1. Begin with an initial solution. Mark it as current solution.
-// 2. Find all neighbor solutions to the current solution.
-// 3. If neighbor solution induces a lower cost:
-//         - replace current solution with that solution and goto 2
-//    Otherwise return current solution as the final solution
-
-    // vector2d<Tracklet> tracklets = track(detections, net_cost, histograms, 
-    //                                      segment_cnt, segment_size, max_detections_per_frame);
-    
-    // int trajectory_cnt = get_trajectory_cnt(tracklets);
-    // set_tracklets_net_costs(tracklets, segment_cnt);
-    // assign_trajectory_ids(tracklets, segment_cnt, trajectory_cnt);
-    // vector2d<Detection> trajectories = form_trajectories(tracklets, trajectory_cnt, segment_cnt);
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     merge_frames(tmp_folder, out_video);
