@@ -395,7 +395,7 @@ int main(int argc, char **argv) {
     }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    merge_frames(tmp_folder, out_video);
+    merge_frames(tmp_folder, out_video, fps);
 
     clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();

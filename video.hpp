@@ -11,4 +11,4 @@ void trim_video(std::string video_in, std::string video_out, int frame_cnt);
 void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
                        std::string tmp_folder, std::string in_video, std::string tmp_video);
 
-void merge_frames(std::string tmp_folder, std::string out_video);
+void merge_frames(std::string tmp_folder, std::string out_video, double fps);
