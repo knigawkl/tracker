@@ -235,7 +235,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
         // then we can get rid of a lot of edges that are not needed anymore
         // if we struggled to find the solution using iou, we calculate the hik cost and try to minimize cost
 
-        // at this stage there is a strong need of fighting with occlusions
+        // at this stage there is a strong need for fighting with occlusions
 
         int start = seg_counter * segment_size;
         int min_detections_in_segment_cnt = get_min_detections_in_segment_cnt(nodes, segment_size, seg_counter, segment_cnt, start);
@@ -377,6 +377,7 @@ int main(int argc, char **argv) {
     int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes); // max detections found in one frame
     // auto colors = get_colors(max_nodes_per_cluster);
 
+    // vector of tracklets for each segment
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
 

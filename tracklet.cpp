@@ -1,4 +1,7 @@
+#include <numeric>
+
 #include "tracklet.hpp"
+#include "utils.hpp"
 
 void Tracklet::set_middle_point()
 {
@@ -62,6 +65,65 @@ bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
         return true;
     return false;
 }
+
+void Tracklet::eliminate_outliers()
+{
+    int len = detection_track.size();
+    for (int i = 0; i < len - 1; i++)  // for each detection in this tracklet
+    {
+        vector<double> x;  // x coordinates of detections in this tracklet apart from current
+        vector<double> y;  // y coordinates of detections in this tracklet apart from current
+        for (int j = 0; j < len; j++)
+        {
+            if (i != j)
+            {
+                x.push_back(double(detection_track[j].coords.x));
+                y.push_back(double(detection_track[j].coords.y));
+            }
+        }
+        double x_center = 0;
+        double y_center = 0;
+        x_center = std::accumulate(x.begin(), x.end(), x_center);
+        y_center = std::accumulate(y.begin(), y.end(), y_center);
+        x_center /= (len - 1);  // centroid x center
+        y_center /= (len - 1);  // centroid y center
+
+        vector<double> dists;  // distances from detection to centroid
+        for (int j = 0; j < len; j++)
+            if (i != j)
+                dists.push_back(euclidean_dist(detection_track[j].coords.x, detection_track[j].coords.y, x_center, y_center));
+        double avg_center_dist = 0;
+        avg_center_dist = std::accumulate(dists.begin(), dists.end(), avg_center_dist);
+        avg_center_dist /= (len - 1);
+        double current_center_dist = euclidean_dist(detection_track[i].coords.x, detection_track[i].coords.y, x_center, y_center);
+
+        std::cout << "current_center_dist\t" << current_center_dist << std::endl;
+        std::cout << "avg_center_dist\t" << avg_center_dist << std::endl;
+        std::cout << "outlier_coeff * avg_center_dist\t" << outlier_coeff * avg_center_dist << std::endl;
+
+        if (current_center_dist > outlier_coeff * avg_center_dist)
+        {
+            std::pair<double, double> linear_fit = get_linear_fit(x, y, len - 1);
+            std::cout << "a: " << linear_fit.first << std::endl;
+            std::cout << "b: " << linear_fit.second << std::endl;
+            if (i == 0) {
+                detection_track[i].coords.x = detection_track[i + 1].coords.x - (detection_track[i + 2].coords.x - detection_track[i + 1].coords.x);
+            }
+            else if (i == (len - 1)) {
+                detection_track[i].coords.x = detection_track[i - 1].coords.x + (detection_track[i - 1].coords.x - detection_track[i - 2].coords.x);
+            }
+            else {
+                detection_track[i].coords.x = (detection_track[i - 1].coords.x + detection_track[i + 1].coords.x) / 2;
+            }
+            detection_track[i].coords.y = linear_fit.first * detection_track[i].coords.x + linear_fit.second;
+            set_middle_point();
+            set_histogram();
+            is_end_of_traj =  is_end_of_trajectory(video_w, video_h, video_frame_cnt);
+            is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
+        }
+    }
+}
+
 
 void Tracklet::print() const
 {

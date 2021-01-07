@@ -1,5 +1,6 @@
 #include <sstream>
 #include <iostream>
+#include <cmath>
 
 #include "utils.hpp"
 #include "tracker.hpp"
@@ -100,4 +101,34 @@ void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono:
     std::cout << "Detection took = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
             << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
             << "[s])" << std::endl;
+}
+
+std::pair<double, double> get_linear_fit(vector<double> x, vector<double> y, int n)
+{
+    double x_sum = 0, x2_sum = 0, y_sum = 0, xy_sum = 0;
+    double a;
+    double b;
+    for (int i = 0; i < n; i++)
+    {
+        x_sum = x_sum + x[i];
+        y_sum = y_sum + y[i];
+        x2_sum = x2_sum + pow(x[i], 2);
+        xy_sum = xy_sum + x[i] * y[i];
+    }
+    if ((n * x2_sum - x_sum * x_sum) == 0)
+        x2_sum += 0.5;
+    double div = (n * x2_sum - x_sum * x_sum);
+    a = (n * xy_sum - x_sum * y_sum) / div;
+    b = (x2_sum * y_sum - x_sum * xy_sum) / div;
+    return std::make_pair(a, b);
+}
+
+double euclidean_dist(double x1, double y1, double x2, double y2)
+{
+	double x = x1 - x2;
+	double y = y1 - y2;
+	double dist;
+	dist = pow(x, 2) + pow(y, 2);
+	dist = sqrt(dist);
+	return dist;
 }
