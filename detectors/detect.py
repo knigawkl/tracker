@@ -56,7 +56,8 @@ if __name__ == "__main__":
         logger.info(f"Performing detection on frame {x+1}/{args.frame_cnt}")
         image = video.get_data(x)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image_path = f"{args.tmp_folder}/img/frame{x}.jpeg"
+        frame_num_str = ''.join('{:05d}'.format(x))
+        image_path = f"{args.tmp_folder}/img/frame{frame_num_str}.jpeg"  
         cv2.imwrite(image_path, image)
         
         detections = detector.find_heads(img_path=image_path,
@@ -67,7 +68,7 @@ if __name__ == "__main__":
         # since there where problems with operating on last frames of videos, 
         # I assume that the last frame was just the same as previous one
         if x == int(args.frame_cnt) - 1:
-            detections_to_csv(detections=detections,
-            frame_num=x+1)
-            image_path = f"{args.tmp_folder}/img/frame{x+1}.jpeg"
+            detections_to_csv(detections=detections, frame_num=x+1)
+            frame_num_str = ''.join('{:05d}'.format(x+1))
+            image_path = f"{args.tmp_folder}/img/frame{frame_num_str}.jpeg"  
             cv2.imwrite(image_path, image)

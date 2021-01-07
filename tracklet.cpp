@@ -108,13 +108,17 @@ void Tracklet::eliminate_outliers()
             std::cout << "b: " << linear_fit.second << std::endl;
             if (i == 0) {
                 detection_track[i].coords.x = detection_track[i + 1].coords.x - (detection_track[i + 2].coords.x - detection_track[i + 1].coords.x);
+                // set bounding box props
             }
             else if (i == (len - 1)) {
                 detection_track[i].coords.x = detection_track[i - 1].coords.x + (detection_track[i - 1].coords.x - detection_track[i - 2].coords.x);
+                // set bounding box props 
             }
             else {
                 detection_track[i].coords.x = (detection_track[i - 1].coords.x + detection_track[i + 1].coords.x) / 2;
+                // set bounding box props
             }
+            is_hypothetical = true;
             detection_track[i].coords.y = linear_fit.first * detection_track[i].coords.x + linear_fit.second;
             set_middle_point();
             set_histogram();
@@ -143,6 +147,7 @@ void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
             Node::print_detection_path(tracklets[i][j].detection_track);
             std::cout << "Is end of trajectory: " << tracklets[i][j].is_end_of_traj << std::endl;
             std::cout << "Is start of trajectory: " << tracklets[i][j].is_start_of_traj << std::endl;
+            std::cout << "Is hypothetical: " << tracklets[i][j].is_hypothetical << std::endl;
         }
     }
 }

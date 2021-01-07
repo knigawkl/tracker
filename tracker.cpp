@@ -381,15 +381,17 @@ int main(int argc, char **argv) {
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
 
-    // print first tracklet just for testing
-    // for (int i = 0; i< 3; i++)
-    // {
-    //     uint8_t r, g, b;
-    //     b = rand() % 256;
-    //     r = rand() % 256;
-    //     g = rand() % 256;
-    //     draw_trajectory(tracklets[0][i].detection_track, tmp_folder, cv::Scalar(b, g, r));
-    // }
+    for (int i = 0; i < tracklets.size(); i++)
+    {
+        for (int j = 0; j < tracklets[i].size(); j++)
+        {
+            uint8_t r, g, b;
+            b = rand() % 256;
+            r = rand() % 256;
+            g = rand() % 256;
+            draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
+        }
+    }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     merge_frames(tmp_folder, out_video);

@@ -59,7 +59,7 @@ vector<cv::Scalar> get_colors(int vec_len)
 std::string get_frame_path(int frame, std::string tmp_folder)
 {
     std::stringstream ss;
-    ss << tmp_folder << "/img/frame" << std::to_string(frame) << ".jpeg";
+    ss << tmp_folder << "/img/frame" << std::setw(5) << std::setfill('0') << std::to_string(frame) << ".jpeg";
     std::string path = ss.str();
     return path;
 }

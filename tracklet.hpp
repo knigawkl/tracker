@@ -21,7 +21,7 @@ public:
     cv::Mat histogram;
     bool is_end_of_traj;
     bool is_start_of_traj;
-
+    bool is_hypothetical = false;
 
     Tracklet(const vector<Node> &path, int wideo_w, int wideo_h, int wideo_frame_cnt)
     {
