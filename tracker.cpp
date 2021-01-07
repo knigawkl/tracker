@@ -360,7 +360,8 @@ int main(int argc, char **argv) {
     make_tmp_dirs(tmp_folder);
 
     cv::VideoCapture in_cap(in_video);
-    std::cout << "OpenCV version : " << CV_VERSION << std::endl;
+    double fps = in_cap.get(cv::CAP_PROP_FPS);
+    std::cout << "Frames per second : " << fps << std::endl;
     int video_w = in_cap.get(cv::CAP_PROP_FRAME_WIDTH);
     int video_h = in_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
     const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
