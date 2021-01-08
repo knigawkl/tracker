@@ -25,7 +25,10 @@ public:
     int prev_node_id = -1;
     Box coords;
     cv::Mat histogram;
-
+    Node()
+    {
+        ;
+    }
     Node(const Box &d, const cv::Mat &frame, int detection_id, int frame_id): 
          coords(d), node_id(detection_id), cluster_id(frame_id)
     {

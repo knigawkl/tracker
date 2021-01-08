@@ -15,11 +15,8 @@ void Tracklet::set_middle_point()
     }
     int x_center = x_sum / detection_track.size();
     int y_center = y_sum / detection_track.size();
-    Location middle_point = {
-        .x = x_center,
-        .y = y_center
-    };
-    center = middle_point; 
+    centroid.coords.x = x_center;
+    centroid.coords.y = y_center; 
 }
 
 void Tracklet::set_histogram()
@@ -31,7 +28,13 @@ void Tracklet::set_histogram()
     
     for (int i = 1; i < detection_track.size(); i++)
         tracklet_histogram += detection_track[i].histogram * anti_overflow_coeff;
-    histogram = tracklet_histogram;
+    centroid.histogram = tracklet_histogram;
+}
+
+void Tracklet::set_centroid()
+{
+    set_middle_point();
+    set_histogram();
 }
 
 bool Tracklet::is_end_of_trajectory(int video_w, int video_h, int video_frame_cnt)
@@ -109,19 +112,32 @@ void Tracklet::eliminate_outliers()
             if (i == 0) {
                 detection_track[i].coords.x = detection_track[i + 1].coords.x - (detection_track[i + 2].coords.x - detection_track[i + 1].coords.x);
                 // set bounding box props
+                detection_track[i].coords.width = detection_track[i + 1].coords.width;
+                detection_track[i].coords.height = detection_track[i + 1].coords.height;
+                detection_track[i].histogram = detection_track[i + 1].histogram;
             }
             else if (i == (len - 1)) {
                 detection_track[i].coords.x = detection_track[i - 1].coords.x + (detection_track[i - 1].coords.x - detection_track[i - 2].coords.x);
                 // set bounding box props 
+                detection_track[i].coords.width = detection_track[i - 1].coords.width;
+                detection_track[i].coords.height = detection_track[i - 1].coords.height;
+                detection_track[i].histogram = detection_track[i - 1].histogram;
             }
             else {
                 detection_track[i].coords.x = (detection_track[i - 1].coords.x + detection_track[i + 1].coords.x) / 2;
                 // set bounding box props
+                detection_track[i].coords.width = detection_track[i - 1].coords.width;
+                detection_track[i].coords.height = detection_track[i - 1].coords.height;
+                detection_track[i].histogram = detection_track[i + 1].histogram;
             }
+            detection_track[i].coords.x_max = detection_track[i].coords.x + detection_track[i].coords.width / 2;
+            detection_track[i].coords.x_min = detection_track[i].coords.x - detection_track[i].coords.width / 2;
+            detection_track[i].coords.y_max = detection_track[i].coords.y + detection_track[i].coords.height / 2;
+            detection_track[i].coords.y_min = detection_track[i].coords.y - detection_track[i].coords.height / 2;
+
             is_hypothetical = true;
             detection_track[i].coords.y = linear_fit.first * detection_track[i].coords.x + linear_fit.second;
-            set_middle_point();
-            set_histogram();
+            set_centroid();
             is_end_of_traj =  is_end_of_trajectory(video_w, video_h, video_frame_cnt);
             is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
         }
@@ -131,8 +147,9 @@ void Tracklet::eliminate_outliers()
 
 void Tracklet::print() const
 {
-    std::cout << "Tracklet: " << "center: ";
-    center.print();
+    std::cout << "Tracklet: " << "center: "
+              << " x: " << centroid.coords.x 
+              << ", y: " << centroid.coords.y << std::endl;
 }
 
 void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)

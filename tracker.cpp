@@ -190,6 +190,7 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
     return nodes;
 }
 
+// do modułu draw
 void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
 {
     constexpr int const line_thickness = 2; 
@@ -382,17 +383,44 @@ int main(int argc, char **argv) {
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
 
-    for (int i = 0; i < tracklets.size(); i++)
+    // maybe create greedy solution at first
+    // use smcp approach -- meaning that tracklets from 3 neighbouring segments are analysed at time
+    for (int i = 0; i < segment_cnt - 1; i++)
     {
-        for (int j = 0; j < tracklets[i].size(); j++)
+        std::cout << "SMCP in segment: " << i << std::endl;
+        if (i == 0)
         {
-            uint8_t r, g, b;
-            b = rand() % 256;
-            r = rand() % 256;
-            g = rand() % 256;
-            draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
+            // for each tracklet in this segment 
+            // find edges to tracklets in the next segment
+            ;
         }
+        else if (i == (segment_cnt - 2))
+        {
+            ;
+
+        }
+        else
+        {
+            ;
+        }
+        
+
     }
+
+
+    // and perform a bunch of optimizations then
+
+    // for (int i = 0; i < tracklets.size(); i++)
+    // {
+    //     for (int j = 0; j < tracklets[i].size(); j++)
+    //     {
+    //         uint8_t r, g, b;
+    //         b = rand() % 256;
+    //         r = rand() % 256;
+    //         g = rand() % 256;
+    //         draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
+    //     }
+    // }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     merge_frames(tmp_folder, out_video, fps);
