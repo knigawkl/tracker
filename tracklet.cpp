@@ -72,7 +72,7 @@ bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
 void Tracklet::eliminate_outliers()
 {
     int len = detection_track.size();
-    for (size_t i = 0; i < len - 1; i++)  // for each detection in this tracklet
+    for (size_t i = 0; i < len; i++)  // for each detection in this tracklet
     {
         vector<double> x;  // x coordinates of detections in this tracklet apart from current
         vector<double> y;  // y coordinates of detections in this tracklet apart from current

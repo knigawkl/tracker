@@ -414,8 +414,8 @@ int main(int argc, char **argv) {
     // }
     // moze lepiej stworzyc klasę clique
     // i w loopie o(n^3) stworzyć wszystkie możliwe kliki
-    // for (size_t i = 2; i < segment_cnt; i++)
-    // {
+    for (size_t i = 2; i < segment_cnt; i += 2)
+    {
     //     for (size_t i = 0; i < count; i++)
     //     {
     //         for (size_t i = 0; i < count; i++)
@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
             
     //     }
         
-    // }
+    }
 
 
     // and perform a bunch of optimizations then
