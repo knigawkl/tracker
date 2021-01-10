@@ -94,11 +94,11 @@ void Tracklet::eliminate_outliers()
         vector<double> dists;  // distances from detection to centroid
         for (size_t j = 0; j < len; j++)
             if (i != j)
-                dists.push_back(euclidean_dist(detection_track[j].coords.x, detection_track[j].coords.y, x_center, y_center));
+                dists.push_back(utils::regression::euclidean_dist(detection_track[j].coords.x, detection_track[j].coords.y, x_center, y_center));
         double avg_center_dist = 0;
         avg_center_dist = std::accumulate(dists.begin(), dists.end(), avg_center_dist);
         avg_center_dist /= (len - 1);
-        double current_center_dist = euclidean_dist(detection_track[i].coords.x, detection_track[i].coords.y, x_center, y_center);
+        double current_center_dist = utils::regression::euclidean_dist(detection_track[i].coords.x, detection_track[i].coords.y, x_center, y_center);
 
         std::cout << "current_center_dist\t" << current_center_dist << std::endl;
         std::cout << "avg_center_dist\t" << avg_center_dist << std::endl;
@@ -106,7 +106,7 @@ void Tracklet::eliminate_outliers()
 
         if (current_center_dist > outlier_coeff * avg_center_dist)
         {
-            std::pair<double, double> linear_fit = get_linear_fit(x, y, len - 1);
+            std::pair<double, double> linear_fit = utils::regression::get_linear_fit(x, y, len - 1);
             std::cout << "a: " << linear_fit.first << std::endl;
             std::cout << "b: " << linear_fit.second << std::endl;
             if (i == 0) {

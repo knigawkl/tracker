@@ -32,11 +32,11 @@ void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt,
         std::string const trimmed_video = tmp_folder + "/trim.mp4";
         trim_video(in_video, trimmed_video, desired_frame_cnt);
         std::cout << "Input video frames count cut to: " << desired_frame_cnt << std::endl;
-        mv(trimmed_video, tmp_video);
+        utils::sys::mv(trimmed_video, tmp_video);
     }
     else
     {
-        cp(in_video, tmp_video);
+        utils::sys::cp(in_video, tmp_video);
     }
 }
 

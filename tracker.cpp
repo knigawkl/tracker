@@ -55,11 +55,11 @@ void get_parameters(int argc, char **argv, int& segment_size, std::string& in_vi
                 tmp_folder = optarg;
                 break;
             case 'h':
-                print_usage_info();
+                utils::printing::print_usage_info();
                 exit(0);
             default:
                 std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
-                print_usage_info();
+                utils::printing::print_usage_info();
                 abort();
         }
     }
@@ -183,7 +183,7 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
         std::stringstream ss;
         ss << tmp_folder << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
-        cv::Mat frame = cv::imread(get_frame_path(i, tmp_folder));
+        cv::Mat frame = cv::imread(utils::get_frame_path(i, tmp_folder));
         nodes[i] = load_cluster_nodes(csv_path, video_w, video_h, frame, i);
     }
     Node::print_nodes(nodes);
@@ -202,7 +202,7 @@ void draw_trajectory(const vector<Node> &trajectory, std::string tmp_folder, cv:
 {
     for (Node node: trajectory)
     {
-        auto path = get_frame_path(node.cluster_id, tmp_folder);
+        auto path = utils::get_frame_path(node.cluster_id, tmp_folder);
         cv::Mat img = cv::imread(path);
         draw_rectangle(node.coords, color, img);
         cv::imwrite(path, img);
@@ -356,9 +356,9 @@ int main(int argc, char **argv) {
     
     get_parameters(argc, argv, segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
     verify_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
-    print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
-    clear_tmp(tmp_folder);
-    make_tmp_dirs(tmp_folder);
+    utils::printing::print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
+    utils::sys::clear_tmp(tmp_folder);
+    utils::sys::make_tmp_dirs(tmp_folder);
 
     cv::VideoCapture in_cap(in_video);
     double fps = in_cap.get(cv::CAP_PROP_FPS);
@@ -445,9 +445,9 @@ int main(int argc, char **argv) {
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     merge_frames(tmp_folder, out_video, fps);
 
-    clear_tmp(tmp_folder);
+    utils::sys::clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
-    print_exec_time(begin, end);
-    print_detect_time(detect_begin, detect_end);
+    utils::printing::print_exec_time(begin, end);
+    utils::printing::print_detect_time(detect_begin, detect_end);
     return 0;
 }
