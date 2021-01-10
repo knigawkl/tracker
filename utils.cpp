@@ -46,7 +46,7 @@ vector<cv::Scalar> get_colors(int vec_len)
     vector<cv::Scalar> colors;
     colors.reserve(vec_len);
     uint8_t r, g, b;
-    for (int i = 0; i < vec_len; i++)
+    for (size_t i = 0; i < vec_len; i++)
     {
         b = rand() % 256;
         r = rand() % 256;
@@ -108,7 +108,7 @@ std::pair<double, double> get_linear_fit(vector<double> x, vector<double> y, int
     double x_sum = 0, x2_sum = 0, y_sum = 0, xy_sum = 0;
     double a;
     double b;
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
     {
         x_sum = x_sum + x[i];
         y_sum = y_sum + y[i];

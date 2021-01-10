@@ -26,7 +26,7 @@ void Tracklet::set_histogram()
     double anti_overflow_coeff = 1.0 / seg_size;
     auto tracklet_histogram = detection_track[0].histogram * anti_overflow_coeff;
     
-    for (int i = 1; i < detection_track.size(); i++)
+    for (size_t i = 1; i < detection_track.size(); i++)
         tracklet_histogram += detection_track[i].histogram * anti_overflow_coeff;
     centroid.histogram = tracklet_histogram;
 }
@@ -72,11 +72,11 @@ bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
 void Tracklet::eliminate_outliers()
 {
     int len = detection_track.size();
-    for (int i = 0; i < len - 1; i++)  // for each detection in this tracklet
+    for (size_t i = 0; i < len - 1; i++)  // for each detection in this tracklet
     {
         vector<double> x;  // x coordinates of detections in this tracklet apart from current
         vector<double> y;  // y coordinates of detections in this tracklet apart from current
-        for (int j = 0; j < len; j++)
+        for (size_t j = 0; j < len; j++)
         {
             if (i != j)
             {
@@ -92,7 +92,7 @@ void Tracklet::eliminate_outliers()
         y_center /= (len - 1);  // centroid y center
 
         vector<double> dists;  // distances from detection to centroid
-        for (int j = 0; j < len; j++)
+        for (size_t j = 0; j < len; j++)
             if (i != j)
                 dists.push_back(euclidean_dist(detection_track[j].coords.x, detection_track[j].coords.y, x_center, y_center));
         double avg_center_dist = 0;
@@ -130,16 +130,17 @@ void Tracklet::eliminate_outliers()
                 detection_track[i].coords.height = detection_track[i - 1].coords.height;
                 detection_track[i].histogram = detection_track[i + 1].histogram;
             }
+            detection_track[i].coords.y = linear_fit.first * detection_track[i].coords.x + linear_fit.second;
+
             detection_track[i].coords.x_max = detection_track[i].coords.x + detection_track[i].coords.width / 2;
             detection_track[i].coords.x_min = detection_track[i].coords.x - detection_track[i].coords.width / 2;
             detection_track[i].coords.y_max = detection_track[i].coords.y + detection_track[i].coords.height / 2;
             detection_track[i].coords.y_min = detection_track[i].coords.y - detection_track[i].coords.height / 2;
 
-            is_hypothetical = true;
-            detection_track[i].coords.y = linear_fit.first * detection_track[i].coords.x + linear_fit.second;
             set_centroid();
             is_end_of_traj =  is_end_of_trajectory(video_w, video_h, video_frame_cnt);
             is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
+            is_hypothetical = true;
         }
     }
 }
@@ -155,10 +156,10 @@ void Tracklet::print() const
 void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
 {
     std::cout << std::endl;
-    for (int i = 0; i < tracklets.size(); i++)
+    for (size_t i = 0; i < tracklets.size(); i++)
     {
         std::cout << "Tracklets found in segment " << i+1 << "/" << tracklets.size() << std::endl;
-        for (int j = 0; j < tracklets[i].size(); j++)
+        for (size_t j = 0; j < tracklets[i].size(); j++)
         {
             std::cout << "Tracklet " << j+1 << "/" << tracklets[i].size() << std::endl;
             Node::print_detection_path(tracklets[i][j].detection_track);

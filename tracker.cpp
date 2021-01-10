@@ -132,7 +132,7 @@ vector<Node> load_cluster_nodes(std::string csv_file, int video_w, int video_h,
         std::stringstream ss(line); 
         int coords[4];
         constexpr int const coord_cnt = 4; 
-        for (int i = 0; i < coord_cnt; i++)
+        for (size_t i = 0; i < coord_cnt; i++)
         {
             std::string substr;
             getline(ss, substr, ',');
@@ -178,7 +178,7 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
 {
     // loads a vector of Node for each frame
     vector2d<Node> nodes(frame_cnt, vector<Node>());
-    for (int i = 0; i < frame_cnt; i += 1) 
+    for (size_t i = 0; i < frame_cnt; i += 1) 
     {
         std::stringstream ss;
         ss << tmp_folder << "/csv/frame" << i << ".csv";
@@ -212,7 +212,7 @@ void draw_trajectory(const vector<Node> &trajectory, std::string tmp_folder, cv:
 int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_size, int seg_counter, int segment_cnt, int start)
 {
     int min_detections_in_segment_cnt = 1000;
-    for (int i = 0; i < segment_size; i++)
+    for (size_t i = 0; i < segment_size; i++)
     {
         int detections_in_frame_cnt = nodes[start+i].size();
         if (detections_in_frame_cnt < min_detections_in_segment_cnt)
@@ -226,7 +226,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
 {
     vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
 
-    for (int seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
+    for (size_t seg_counter = 0; seg_counter < segment_cnt; seg_counter++)
     {
         std::cout << std::endl << "Tracking in segment " << seg_counter+1 << "/" << segment_cnt << std::endl;
         // first we build a graph per segment
@@ -278,19 +278,19 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
         }
 
         // now we have to connect the nodes that still lack prev/next pointers 
-        for (int i = 0; i < segment_size - 1; i++)  // for each frame in the segment except for the last one
+        for (size_t i = 0; i < segment_size - 1; i++)  // for each frame in the segment except for the last one
         {
             int detections_with_next_in_frame = 0;
             // vector<HistInterKernel> frame_hiks;
             vector<Edge> frame_edges;
-            for (int j = 0; j < nodes[start + i].size(); j++)  // for each detection in the frame
+            for (size_t j = 0; j < nodes[start + i].size(); j++)  // for each detection in the frame
             {
                 if (nodes[start + i][j].next_node_id > -1)  // if the detection already has next pointer go to the next detection
                     detections_with_next_in_frame++;
                 else
                 {
                     // if the detection does not have next pointer, then we calculate its hiks with detections from next frame that lack prev pointer
-                    for (int k = 0; k < nodes[start + i + 1].size(); k++)
+                    for (size_t k = 0; k < nodes[start + i + 1].size(); k++)
                     {
                         if (nodes[start + i + 1][k].prev_node_id == -1)
                         {
@@ -317,7 +317,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
         }
 
         // get segment's tracklets
-        for (int i = 0; i < nodes[start].size(); i++)  // for each detection in the first frame of the segment
+        for (size_t i = 0; i < nodes[start].size(); i++)  // for each detection in the first frame of the segment
         {
             vector<int> tracklet_ids;
             Node node = nodes[start][i];
@@ -326,7 +326,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
             if (next == -1)
                 continue;
 
-            for (int j = 1; j < segment_size; j++)
+            for (size_t j = 1; j < segment_size; j++)
             {
                 node = nodes[start + j][next];
                 tracklet_ids.push_back(node.node_id);
@@ -339,7 +339,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
                 continue;
 
             vector<Node> tracklet_nodes;
-            for (int j = 0; j < segment_size; j++)
+            for (size_t j = 0; j < segment_size; j++)
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
@@ -385,42 +385,62 @@ int main(int argc, char **argv) {
 
     // maybe create greedy solution at first
     // use smcp approach -- meaning that tracklets from 3 neighbouring segments are analysed at time
-    for (int i = 0; i < segment_cnt - 1; i++)
-    {
-        std::cout << "SMCP in segment: " << i << std::endl;
-        if (i == 0)
-        {
-            // for each tracklet in this segment 
-            // find edges to tracklets in the next segment
-            ;
-        }
-        else if (i == (segment_cnt - 2))
-        {
-            ;
+    // for (size_t i = 2; i < segment_cnt; i++)
+    // {
+    //     std::cout << "SMCP in segment: " << i << std::endl;
+    //     vector<Edge> segment_edges;
+    //     for (size_t j = 0; j < tracklets[i].size(); j++)
+    //     {
+    //         int k = 0;
+    //         for (k = 0; k < tracklets[i - 1].size(); k++)
+    //         {
+    //             segment_edges.push_back(Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid));
+    //         }
+    //         for (k = 0; k < tracklets[i - 2].size(); k++)
+    //         {
+    //             segment_edges.push_back(Edge(tracklets[i][j].centroid, tracklets[i - 2][k].centroid));
+    //         }
+    //     }
+    //     for (size_t j = 0; j < tracklets[i - 1].size(); j++)
+    //     {
+    //         for (k = 0; k < tracklets[i - 2].size(); k++)
+    //         {
+    //             segment_edges.push_back(Edge(tracklets[i - 1][j].centroid, tracklets[i - 2][k].centroid));
+    //         }
+    //     }
+    //     std::sort(segment_edges.begin(), segment_edges.end(), Edge::edge_cmp);
 
-        }
-        else
-        {
-            ;
-        }
+        // now its time to check how many merges are needed
+    // }
+    // moze lepiej stworzyc klasę clique
+    // i w loopie o(n^3) stworzyć wszystkie możliwe kliki
+    // for (size_t i = 2; i < segment_cnt; i++)
+    // {
+    //     for (size_t i = 0; i < count; i++)
+    //     {
+    //         for (size_t i = 0; i < count; i++)
+    //         {
+    //             /* code */
+    //         }
+            
+    //     }
         
-
-    }
+    // }
 
 
     // and perform a bunch of optimizations then
 
-    // for (int i = 0; i < tracklets.size(); i++)
-    // {
-    //     for (int j = 0; j < tracklets[i].size(); j++)
-    //     {
-    //         uint8_t r, g, b;
-    //         b = rand() % 256;
-    //         r = rand() % 256;
-    //         g = rand() % 256;
-    //         draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
-    //     }
-    // }
+    for (size_t i = 0; i < tracklets.size(); i++)
+    {
+        for (size_t j = 0; j < tracklets[i].size(); j++)
+        {
+            uint8_t r, g, b;
+            b = rand() % 256;
+            r = rand() % 256;
+            g = rand() % 256;
+            draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
+        }
+    }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     merge_frames(tmp_folder, out_video, fps);

@@ -57,7 +57,7 @@ void Node::print_detection_path(const vector<Node> &path)
 {
     if (path.size())
     {
-        for (int i = 0; i < path.size()-1; i++)
+        for (size_t i = 0; i < path.size()-1; i++)
         {
             std::cout << "(" << path[i].coords.x << "," << path[i].coords.y << ")->";
         }
@@ -69,10 +69,10 @@ void Node::print_detection_path(const vector<Node> &path)
 
 void Node::print_nodes(const vector2d<Node> &nodes)
 {
-    for (int i = 0; i < nodes.size(); i++)
+    for (size_t i = 0; i < nodes.size(); i++)
     {
         std::cout << nodes[i].size() << " detections in frame " << i << std::endl;
-        for (int j = 0; j < nodes[i].size(); j++)
+        for (size_t j = 0; j < nodes[i].size(); j++)
         {
             nodes[i][j].print();
         }
