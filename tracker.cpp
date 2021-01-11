@@ -353,7 +353,6 @@ int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
     std::string in_video, out_video, detector, detector_cfg, tmp_folder;
-    
     get_parameters(argc, argv, segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
     verify_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
     utils::printing::print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
@@ -362,23 +361,20 @@ int main(int argc, char **argv) {
 
     cv::VideoCapture in_cap(in_video);
     double fps = in_cap.get(cv::CAP_PROP_FPS);
-    std::cout << "Frames per second : " << fps << std::endl;
     int video_w = in_cap.get(cv::CAP_PROP_FRAME_WIDTH);
     int video_h = in_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
-    const int frame_cnt = get_trimmed_frame_cnt(in_cap, segment_size);
+    const int frame_cnt = video::get_trimmed_frame_cnt(in_cap, segment_size);
     const int segment_cnt = frame_cnt / segment_size;
     const std::string tmp_video = tmp_folder + "/input.mp4";
-    prepare_tmp_video(in_cap, frame_cnt, tmp_folder, in_video, tmp_video);
-    // in_cap.release();  // this should be automatic
+    video::prepare_tmp_video(in_cap, frame_cnt, tmp_folder, in_video, tmp_video);
 
     auto detect_begin = std::chrono::steady_clock::now();
     detect(detector, detector_cfg, frame_cnt - 1, tmp_video, tmp_folder);
     auto detect_end = std::chrono::steady_clock::now();
 
-    vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h); // vector of Nodes (detections) for each frame
-    int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes); // max detections found in one frame
-    // auto colors = get_colors(max_nodes_per_cluster);
-
+    // vector of Nodes (detections) for each frame
+    vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h);
+    int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes);
     // vector of tracklets for each segment
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
@@ -422,11 +418,8 @@ int main(int argc, char **argv) {
     //         {
     //             /* code */
     //         }
-            
     //     }
-        
     }
-
 
     // and perform a bunch of optimizations then
 
@@ -443,8 +436,7 @@ int main(int argc, char **argv) {
     }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
-    merge_frames(tmp_folder, out_video, fps);
-
+    video::merge_frames(tmp_folder, out_video, fps);
     utils::sys::clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
     utils::printing::print_exec_time(begin, end);
