@@ -191,25 +191,6 @@ vector2d<Node> load_nodes(int frame_cnt, std::string tmp_folder, int video_w, in
     return nodes;
 }
 
-// do modułu draw
-void draw_rectangle(const Box &d, const cv::Scalar &color, cv::Mat &img)
-{
-    constexpr int const line_thickness = 2; 
-    cv::Rect rect(d.x_min, d.y_min, d.width, d.height);
-    cv::rectangle(img, rect, color, line_thickness);
-}
-
-void draw_trajectory(const vector<Node> &trajectory, std::string tmp_folder, cv::Scalar color)
-{
-    for (Node node: trajectory)
-    {
-        auto path = utils::get_frame_path(node.cluster_id, tmp_folder);
-        cv::Mat img = cv::imread(path);
-        draw_rectangle(node.coords, color, img);
-        cv::imwrite(path, img);
-    }
-}
-
 int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_size, int seg_counter, int segment_cnt, int start)
 {
     int min_detections_in_segment_cnt = 1000;
@@ -223,7 +204,7 @@ int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_s
     return min_detections_in_segment_cnt;
 }
 
-vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt, int video_w, int video_h, int video_frame_cnt)
+vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int segment_cnt, int video_w, int video_h, int video_frame_cnt, std::string tmp_folder)
 {
     vector2d<Tracklet> tracklets(segment_cnt, vector<Tracklet>());
 
@@ -344,7 +325,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
             {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             }
-            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_w, video_h, video_frame_cnt));
+            tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_w, video_h, video_frame_cnt, tmp_folder));
         }
     }
     return tracklets;
@@ -377,7 +358,7 @@ int main(int argc, char **argv) {
     vector2d<Node> nodes = load_nodes(frame_cnt, tmp_folder, video_w, video_h);
     int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes);
     // vector of tracklets for each segment
-    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
+    vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt, tmp_folder);
     Tracklet::print_tracklets(tracklets);
 
     for (size_t i = 2; i < segment_cnt; i += 2)
@@ -430,17 +411,13 @@ int main(int argc, char **argv) {
 
     // and perform a bunch of optimizations then
 
-    // for (size_t i = 0; i < tracklets.size(); i++)
-    // {
-    //     for (size_t j = 0; j < tracklets[i].size(); j++)
-    //     {
-    //         uint8_t r, g, b;
-    //         b = rand() % 256;
-    //         r = rand() % 256;
-    //         g = rand() % 256;
-    //         draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
-    //     }
-    // }
+    for (size_t i = 0; i < tracklets.size(); i++)
+    {
+        for (size_t j = 0; j < tracklets[i].size(); j++)
+        {
+            tracklets[i][j].draw();
+        }
+    }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     video::merge_frames(tmp_folder, out_video, fps);

@@ -37,6 +37,28 @@ void Tracklet::set_centroid()
     set_histogram();
 }
 
+void Tracklet::init_color()
+{
+    uint8_t r, g, b;
+    b = rand() % 256;
+    r = rand() % 256;
+    g = rand() % 256;
+    color = cv::Scalar(b, g, r);
+}
+
+void Tracklet::draw()
+{
+    constexpr int const line_thickness = 2; 
+    for (const Node& node: detection_track)
+    {
+        auto path = utils::get_frame_path(node.cluster_id, tmp_folder);
+        cv::Mat img = cv::imread(path);
+        cv::Rect rect(node.coords.x_min, node.coords.y_min, node.coords.width, node.coords.height);
+        cv::rectangle(img, rect, color, line_thickness);
+        cv::imwrite(path, img);
+    }
+}
+
 bool Tracklet::is_end_of_trajectory(int video_w, int video_h, int video_frame_cnt)
 {
     if (detection_track.back().cluster_id == (video_frame_cnt - 1))
