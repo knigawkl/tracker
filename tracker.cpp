@@ -20,6 +20,7 @@
 
 #include "tracker.hpp"
 #include "edge.hpp"
+#include "clique.hpp"
 #include "iou.hpp"
 #include "hik.hpp"
 #include "location.hpp"
@@ -379,61 +380,67 @@ int main(int argc, char **argv) {
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt);
     Tracklet::print_tracklets(tracklets);
 
-    // maybe create greedy solution at first
-    // use smcp approach -- meaning that tracklets from 3 neighbouring segments are analysed at time
-    // for (size_t i = 2; i < segment_cnt; i++)
-    // {
-    //     std::cout << "SMCP in segment: " << i << std::endl;
-    //     vector<Edge> segment_edges;
-    //     for (size_t j = 0; j < tracklets[i].size(); j++)
-    //     {
-    //         int k = 0;
-    //         for (k = 0; k < tracklets[i - 1].size(); k++)
-    //         {
-    //             segment_edges.push_back(Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid));
-    //         }
-    //         for (k = 0; k < tracklets[i - 2].size(); k++)
-    //         {
-    //             segment_edges.push_back(Edge(tracklets[i][j].centroid, tracklets[i - 2][k].centroid));
-    //         }
-    //     }
-    //     for (size_t j = 0; j < tracklets[i - 1].size(); j++)
-    //     {
-    //         for (k = 0; k < tracklets[i - 2].size(); k++)
-    //         {
-    //             segment_edges.push_back(Edge(tracklets[i - 1][j].centroid, tracklets[i - 2][k].centroid));
-    //         }
-    //     }
-    //     std::sort(segment_edges.begin(), segment_edges.end(), Edge::edge_cmp);
-
-        // now its time to check how many merges are needed
-    // }
-    // moze lepiej stworzyc klasę clique
-    // i w loopie o(n^3) stworzyć wszystkie możliwe kliki
     for (size_t i = 2; i < segment_cnt; i += 2)
     {
-    //     for (size_t i = 0; i < count; i++)
-    //     {
-    //         for (size_t i = 0; i < count; i++)
-    //         {
-    //             /* code */
-    //         }
-    //     }
+        std::cout << "SMCP in segment: " << i << std::endl;
+        int minimum = std::min({tracklets[i - 2].size(), tracklets[i - 1].size(), tracklets[i].size()});
+        vector<Clique> cliques;
+
+        for (size_t j = 0; j < tracklets[i].size(); j++)
+        {
+            for (size_t k = 0; k < tracklets[i - 1].size(); k++)
+            {
+                for (size_t l = 0; l < tracklets[i - 2].size(); l++)
+                {
+                    bool is_new = true;
+                    for (Clique const& c: cliques)
+                        if (c.tracklet_idx1 == j && c.tracklet_idx2 == k && c.tracklet_idx3 == l)
+                            is_new = false;
+                    if (is_new)
+                    {
+                        Edge e1 = Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid);
+                        Edge e2 = Edge(tracklets[i - 1][k].centroid, tracklets[i - 2][l].centroid);
+                        Edge e3 = Edge(tracklets[i - 2][l].centroid, tracklets[i][j].centroid);
+                        cliques.push_back(Clique(e1, e2, e3, j, k, l));
+                    }
+                }
+            }
+        }
+        std::sort(cliques.begin(), cliques.end(), Clique::clique_cmp);
+        vector<Clique> solution;
+        for (int i = 0; i < minimum; i++)
+        {
+            Clique min_clique = cliques.front();
+            solution.push_back(min_clique);
+            vector<Clique> slimmed_cliques;
+            for (const Clique& c: cliques)
+                if (c.tracklet_idx1 != min_clique.tracklet_idx1 && c.tracklet_idx2 != min_clique.tracklet_idx2 && c.tracklet_idx3 != min_clique.tracklet_idx3)
+                    slimmed_cliques.push_back(c);
+            cliques = slimmed_cliques;
+        }
+        std::cout << "Solution: " << std::endl;
+        for (const Clique s: solution)
+            s.print();
     }
+    // mamy tracklety z trzech sąsiednich segmentów
+    // najpierw zajmujemy się detekcjami, które mają is_start_of traj, a są w chronologicznie drugim segmencie -- wtedy szukamy im następnika z trzeciego segmentu i usuwamy z poczekalni
+    // chyba konieczne jest ustawienia jakiejś wartości progowej na wadze krawędzi, tak aby pojedynyczy durny tracklet z drugiej sekwencji nie zepsul roboty
+    // konieczne będzie wybieranie takich nagrań, aby dzielone były na conajmniej 3 segmenty
+    // w pierwszej kolejnosci trzeba sie takze zajac takimi trackletami, ktore maja is_end_of_traj na true a sa w drugim segmencie
 
     // and perform a bunch of optimizations then
 
-    for (size_t i = 0; i < tracklets.size(); i++)
-    {
-        for (size_t j = 0; j < tracklets[i].size(); j++)
-        {
-            uint8_t r, g, b;
-            b = rand() % 256;
-            r = rand() % 256;
-            g = rand() % 256;
-            draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
-        }
-    }
+    // for (size_t i = 0; i < tracklets.size(); i++)
+    // {
+    //     for (size_t j = 0; j < tracklets[i].size(); j++)
+    //     {
+    //         uint8_t r, g, b;
+    //         b = rand() % 256;
+    //         r = rand() % 256;
+    //         g = rand() % 256;
+    //         draw_trajectory(tracklets[i][j].detection_track, tmp_folder, cv::Scalar(b, g, r));
+    //     }
+    // }
 
     // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     video::merge_frames(tmp_folder, out_video, fps);
