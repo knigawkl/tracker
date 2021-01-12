@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
                         Edge e1 = Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid);
                         Edge e2 = Edge(tracklets[i - 1][k].centroid, tracklets[i - 2][l].centroid);
                         Edge e3 = Edge(tracklets[i - 2][l].centroid, tracklets[i][j].centroid);
-                        cliques.push_back(Clique(e1, e2, e3, j, k, l));
+                        cliques.push_back(Clique(e1, e2, e3, l, k, j));
                     }
                 }
             }
@@ -394,14 +394,20 @@ int main(int argc, char **argv) {
             Clique min_clique = cliques.front();
             solution.push_back(min_clique);
             vector<Clique> slimmed_cliques;
+            // na tym etapie trzeba już wykrywaź odchylenia w trackletach -> jeśli dodajemy tracklet hipotetyczny, to nie slimujemy, więc ify będą trzy
             for (const Clique& c: cliques)
                 if (c.tracklet_idx1 != min_clique.tracklet_idx1 && c.tracklet_idx2 != min_clique.tracklet_idx2 && c.tracklet_idx3 != min_clique.tracklet_idx3)
                     slimmed_cliques.push_back(c);
             cliques = slimmed_cliques;
         }
         std::cout << "Solution: " << std::endl;
-        for (const Clique s: solution)
+        for (const Clique& s: solution)
+        {
             s.print();
+            cv::Scalar clique_color = tracklets[i-2][s.tracklet_idx1].color;
+            tracklets[i-1][s.tracklet_idx2].color = clique_color;
+            tracklets[i][s.tracklet_idx3].color = clique_color;
+        }
     }
     // mamy tracklety z trzech sąsiednich segmentów
     // najpierw zajmujemy się detekcjami, które mają is_start_of traj, a są w chronologicznie drugim segmencie -- wtedy szukamy im następnika z trzeciego segmentu i usuwamy z poczekalni
