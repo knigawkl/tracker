@@ -5,6 +5,18 @@
 
 namespace video
 {
+    struct info
+    {
+        int frame_cnt;
+        int segment_size;
+        int segment_cnt;
+        int width;
+        int height;
+        double fps;
+    };
+
+    info get_video_info(const cv::VideoCapture& cap);
+
     int get_video_capture_frame_cnt(const cv::VideoCapture& cap);
 
     int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment);

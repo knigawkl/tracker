@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "tracker.hpp"
-#include "location.hpp"
 #include "node.hpp"
 #include "utils.hpp"
 

@@ -23,7 +23,6 @@
 #include "clique.hpp"
 #include "iou.hpp"
 #include "hik.hpp"
-#include "location.hpp"
 #include "node.hpp"
 #include "tracklet.hpp"
 #include "utils.hpp"
@@ -263,7 +262,6 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
         for (size_t i = 0; i < segment_size - 1; i++)  // for each frame in the segment except for the last one
         {
             int detections_with_next_in_frame = 0;
-            // vector<HistInterKernel> frame_hiks;
             vector<Edge> frame_edges;
             for (size_t j = 0; j < nodes[start + i].size(); j++)  // for each detection in the frame
             {
@@ -331,6 +329,59 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, int segment_size, int se
     return tracklets;
 }
 
+void merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
+{
+    for (size_t i = 2; i < segment_cnt; i += 2)
+    {
+        std::cout << "SMCP in segment: " << i << std::endl;
+        int minimum = std::min({tracklets[i - 2].size(), tracklets[i - 1].size(), tracklets[i].size()});
+        vector<Clique> cliques;
+
+        for (size_t j = 0; j < tracklets[i].size(); j++)
+        {
+            for (size_t k = 0; k < tracklets[i - 1].size(); k++)
+            {
+                for (size_t l = 0; l < tracklets[i - 2].size(); l++)
+                {
+                    bool is_new = true;
+                    for (Clique const& c: cliques)
+                        if (c.tracklet_idx1 == l && c.tracklet_idx2 == k && c.tracklet_idx3 == j)
+                            is_new = false;
+                    if (is_new)
+                    {
+                        Edge e1 = Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid);
+                        Edge e2 = Edge(tracklets[i - 1][k].centroid, tracklets[i - 2][l].centroid);
+                        Edge e3 = Edge(tracklets[i - 2][l].centroid, tracklets[i][j].centroid);
+                        cliques.push_back(Clique(e1, e2, e3, l, k, j));
+                    }
+                }
+            }
+        }
+        std::sort(cliques.begin(), cliques.end(), Clique::clique_cmp);
+        vector<Clique> solution;
+        for (int i = 0; i < minimum; i++)
+        {
+            Clique min_clique = cliques.front();
+            solution.push_back(min_clique);
+            vector<Clique> slimmed_cliques;
+            // na tym etapie trzeba już wykrywaź odchylenia w trackletach -> jeśli dodajemy tracklet hipotetyczny, to nie slimujemy, więc ify będą trzy
+            // trzeba wymyślić sposób na faworyzowanie rozwiązania odnalezionego nad hipotetycznym
+            for (const Clique& c: cliques)
+                if (c.tracklet_idx1 != min_clique.tracklet_idx1 && c.tracklet_idx2 != min_clique.tracklet_idx2 && c.tracklet_idx3 != min_clique.tracklet_idx3)
+                    slimmed_cliques.push_back(c);
+            cliques = slimmed_cliques;
+        }
+        std::cout << "Solution: " << std::endl;
+        for (const Clique& s: solution)
+        {
+            s.print();
+            cv::Scalar clique_color = tracklets[i-2][s.tracklet_idx1].color;
+            tracklets[i-1][s.tracklet_idx2].color = clique_color;
+            tracklets[i][s.tracklet_idx3].color = clique_color;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     auto begin = std::chrono::steady_clock::now();
     int segment_size = 0;
@@ -341,6 +392,8 @@ int main(int argc, char **argv) {
     utils::sys::clear_tmp(tmp_folder);
     utils::sys::make_tmp_dirs(tmp_folder);
 
+    // get_video_info
+    // video::info video_info = get_video_info();
     cv::VideoCapture in_cap(in_video);
     double fps = in_cap.get(cv::CAP_PROP_FPS);
     int video_w = in_cap.get(cv::CAP_PROP_FRAME_WIDTH);
@@ -361,54 +414,8 @@ int main(int argc, char **argv) {
     vector2d<Tracklet> tracklets = get_tracklets(nodes, segment_size, segment_cnt, video_w, video_h, frame_cnt, tmp_folder);
     Tracklet::print_tracklets(tracklets);
 
-    for (size_t i = 2; i < segment_cnt; i += 2)
-    {
-        std::cout << "SMCP in segment: " << i << std::endl;
-        int minimum = std::min({tracklets[i - 2].size(), tracklets[i - 1].size(), tracklets[i].size()});
-        vector<Clique> cliques;
+    merge_tracklets(tracklets, segment_cnt);
 
-        for (size_t j = 0; j < tracklets[i].size(); j++)
-        {
-            for (size_t k = 0; k < tracklets[i - 1].size(); k++)
-            {
-                for (size_t l = 0; l < tracklets[i - 2].size(); l++)
-                {
-                    bool is_new = true;
-                    for (Clique const& c: cliques)
-                        if (c.tracklet_idx1 == j && c.tracklet_idx2 == k && c.tracklet_idx3 == l)
-                            is_new = false;
-                    if (is_new)
-                    {
-                        Edge e1 = Edge(tracklets[i][j].centroid, tracklets[i - 1][k].centroid);
-                        Edge e2 = Edge(tracklets[i - 1][k].centroid, tracklets[i - 2][l].centroid);
-                        Edge e3 = Edge(tracklets[i - 2][l].centroid, tracklets[i][j].centroid);
-                        cliques.push_back(Clique(e1, e2, e3, l, k, j));
-                    }
-                }
-            }
-        }
-        std::sort(cliques.begin(), cliques.end(), Clique::clique_cmp);
-        vector<Clique> solution;
-        for (int i = 0; i < minimum; i++)
-        {
-            Clique min_clique = cliques.front();
-            solution.push_back(min_clique);
-            vector<Clique> slimmed_cliques;
-            // na tym etapie trzeba już wykrywaź odchylenia w trackletach -> jeśli dodajemy tracklet hipotetyczny, to nie slimujemy, więc ify będą trzy
-            for (const Clique& c: cliques)
-                if (c.tracklet_idx1 != min_clique.tracklet_idx1 && c.tracklet_idx2 != min_clique.tracklet_idx2 && c.tracklet_idx3 != min_clique.tracklet_idx3)
-                    slimmed_cliques.push_back(c);
-            cliques = slimmed_cliques;
-        }
-        std::cout << "Solution: " << std::endl;
-        for (const Clique& s: solution)
-        {
-            s.print();
-            cv::Scalar clique_color = tracklets[i-2][s.tracklet_idx1].color;
-            tracklets[i-1][s.tracklet_idx2].color = clique_color;
-            tracklets[i][s.tracklet_idx3].color = clique_color;
-        }
-    }
     // mamy tracklety z trzech sąsiednich segmentów
     // najpierw zajmujemy się detekcjami, które mają is_start_of traj, a są w chronologicznie drugim segmencie -- wtedy szukamy im następnika z trzeciego segmentu i usuwamy z poczekalni
     // chyba konieczne jest ustawienia jakiejś wartości progowej na wadze krawędzi, tak aby pojedynyczy durny tracklet z drugiej sekwencji nie zepsul roboty
@@ -417,15 +424,13 @@ int main(int argc, char **argv) {
 
     // and perform a bunch of optimizations then
 
-    for (size_t i = 0; i < tracklets.size(); i++)
+    for (size_t i = 0; i < tracklets.size(); i++)   /// na to metoda statyczna w tracklet
     {
         for (size_t j = 0; j < tracklets[i].size(); j++)
         {
             tracklets[i][j].draw();
         }
     }
-
-    // draw_bounding_boxes(trajectories, frame_cnt, tmp_folder, colors);
     video::merge_frames(tmp_folder, out_video, fps);
     utils::sys::clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
