@@ -2,20 +2,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <stdint.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <string>
-#include <iostream>
-#include <thread>  
 #include <fstream> 
-#include <sstream>
-#include <cstdlib>
-#include <cmath>
-#include <algorithm> 
 #include <chrono>
-#include <utility>
-#include <limits>
 
 #include "edge.hpp"
 #include "clique.hpp"
