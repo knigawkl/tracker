@@ -13,9 +13,11 @@ namespace video
         int width;
         int height;
         double fps;
+        std::string tmp_folder;
+        std::string tmp_video;
     };
 
-    info get_video_info(const cv::VideoCapture& cap);
+    info get_video_info(const cv::VideoCapture& cap, int segment_size, const std::string& tmp_folder);
 
     int get_video_capture_frame_cnt(const cv::VideoCapture& cap);
 
@@ -23,8 +25,7 @@ namespace video
 
     void trim_video(std::string video_in, std::string video_out, int frame_cnt);
 
-    void prepare_tmp_video(const cv::VideoCapture& in_cap, int desired_frame_cnt, 
-                        std::string tmp_folder, std::string in_video, std::string tmp_video);
+    void prepare_tmp_video(const cv::VideoCapture& in_cap, const info& video_info, const std::string& in_video);
 
-    void merge_frames(std::string tmp_folder, std::string out_video, double fps);
+    void merge_frames(std::string out_video, const video::info& video_info);
 }

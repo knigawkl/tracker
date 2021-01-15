@@ -46,12 +46,12 @@ void Tracklet::init_color()
     color = cv::Scalar(b, g, r);
 }
 
-void Tracklet::draw()
+void Tracklet::draw() const
 {
     constexpr int const line_thickness = 2; 
     for (const Node& node: detection_track)
     {
-        auto path = utils::get_frame_path(node.cluster_id, tmp_folder);
+        auto path = utils::get_frame_path(node.cluster_id, video_info.tmp_folder);
         cv::Mat img = cv::imread(path);
         cv::Rect rect(node.coords.x_min, node.coords.y_min, node.coords.width, node.coords.height);
         cv::rectangle(img, rect, color, line_thickness);
@@ -59,23 +59,23 @@ void Tracklet::draw()
     }
 }
 
-bool Tracklet::is_end_of_trajectory(int video_w, int video_h, int video_frame_cnt)
+bool Tracklet::is_end_of_trajectory() const
 {
-    if (detection_track.back().cluster_id == (video_frame_cnt - 1))
+    if (detection_track.back().cluster_id == (video_info.frame_cnt - 1))
         return true;
     int x_diff_sum = detection_track.back().coords.x - detection_track[0].coords.x;
     int y_diff_sum = detection_track.back().coords.y - detection_track[0].coords.y;
     int next_x_pred = detection_track.back().coords.x + x_diff_sum;  // x position prediction at the end of the next tracklet
     int next_y_pred = detection_track.back().coords.y + y_diff_sum;  // y position prediction at the end of the next tracklet
     std::cout << "Next tracklet predicted to end at: (" << next_x_pred << "," << next_y_pred << ")" << std::endl;
-    if ((next_x_pred < 0) || (next_x_pred > video_w))
+    if ((next_x_pred < 0) || (next_x_pred > video_info.width))
         return true;
-    if ((next_y_pred < 0) || (next_y_pred > video_h))
+    if ((next_y_pred < 0) || (next_y_pred > video_info.height))
         return true;
     return false;
 }
 
-bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
+bool Tracklet::is_start_of_trajectory() const
 {
     if (detection_track.front().cluster_id == 0)
         return true;
@@ -84,9 +84,9 @@ bool Tracklet::is_start_of_trajectory(int video_w, int video_h)
     int prev_x_pred = detection_track.front().coords.x - x_diff_sum;  // x position prediction at the start of the prev tracklet
     int prev_y_pred = detection_track.front().coords.y - y_diff_sum;  // y position prediction at the start of the prev tracklet
     std::cout << "Previous tracklet predicted to start at: (" << prev_x_pred << "," << prev_y_pred << ")" << std::endl;
-    if ((prev_x_pred < 0) || (prev_x_pred > video_w))
+    if ((prev_x_pred < 0) || (prev_x_pred > video_info.width))
         return true;
-    if ((prev_y_pred < 0) || (prev_y_pred > video_h))
+    if ((prev_y_pred < 0) || (prev_y_pred > video_info.height))
         return true;
     return false;
 }
@@ -133,21 +133,18 @@ void Tracklet::eliminate_outliers()
             std::cout << "b: " << linear_fit.second << std::endl;
             if (i == 0) {
                 detection_track[i].coords.x = detection_track[i + 1].coords.x - (detection_track[i + 2].coords.x - detection_track[i + 1].coords.x);
-                // set bounding box props
                 detection_track[i].coords.width = detection_track[i + 1].coords.width;
                 detection_track[i].coords.height = detection_track[i + 1].coords.height;
                 detection_track[i].histogram = detection_track[i + 1].histogram;
             }
             else if (i == (len - 1)) {
                 detection_track[i].coords.x = detection_track[i - 1].coords.x + (detection_track[i - 1].coords.x - detection_track[i - 2].coords.x);
-                // set bounding box props 
                 detection_track[i].coords.width = detection_track[i - 1].coords.width;
                 detection_track[i].coords.height = detection_track[i - 1].coords.height;
                 detection_track[i].histogram = detection_track[i - 1].histogram;
             }
             else {
                 detection_track[i].coords.x = (detection_track[i - 1].coords.x + detection_track[i + 1].coords.x) / 2;
-                // set bounding box props
                 detection_track[i].coords.width = detection_track[i - 1].coords.width;
                 detection_track[i].coords.height = detection_track[i - 1].coords.height;
                 detection_track[i].histogram = detection_track[i + 1].histogram;
@@ -160,8 +157,8 @@ void Tracklet::eliminate_outliers()
             detection_track[i].coords.y_min = detection_track[i].coords.y - detection_track[i].coords.height / 2;
 
             set_centroid();
-            is_end_of_traj =  is_end_of_trajectory(video_w, video_h, video_frame_cnt);
-            is_start_of_traj =  is_start_of_trajectory(video_w, video_h);
+            is_end_of_traj =  is_end_of_trajectory();
+            is_start_of_traj =  is_start_of_trajectory();
             is_hypothetical = true;
         }
     }
@@ -177,7 +174,6 @@ void Tracklet::print() const
 
 void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
 {
-    std::cout << std::endl;
     for (size_t i = 0; i < tracklets.size(); i++)
     {
         std::cout << "Tracklets found in segment " << i+1 << "/" << tracklets.size() << std::endl;
@@ -188,6 +184,17 @@ void Tracklet::print_tracklets(const vector2d<Tracklet> &tracklets)
             std::cout << "Is end of trajectory: " << tracklets[i][j].is_end_of_traj << std::endl;
             std::cout << "Is start of trajectory: " << tracklets[i][j].is_start_of_traj << std::endl;
             std::cout << "Is hypothetical: " << tracklets[i][j].is_hypothetical << std::endl;
+        }
+    }
+}
+
+void Tracklet::draw_tracklets(const vector2d<Tracklet> &tracklets)
+{
+    for (size_t i = 0; i < tracklets.size(); i++)
+    {
+        for (size_t j = 0; j < tracklets[i].size(); j++)
+        {
+            tracklets[i][j].draw();
         }
     }
 }
