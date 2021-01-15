@@ -6,7 +6,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "tracker.hpp"
+#include "templates.hpp"
 
 
 namespace utils

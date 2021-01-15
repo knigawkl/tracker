@@ -1,118 +1,7 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string>
-#include <string_view>
-#include <iostream>
-#include <thread>  
-#include <fstream> 
-#include <sstream>
-#include <cstdlib>
-#include <vector>
-#include <stdexcept>
-#include <cmath>
-#include <algorithm> 
-#include <chrono>
-#include <utility>
-#include <limits>
-
-#include <opencv2/opencv.hpp>
-
 #include "tracker.hpp"
-#include "edge.hpp"
-#include "clique.hpp"
-#include "iou.hpp"
-#include "node.hpp"
-#include "tracklet.hpp"
-#include "utils.hpp"
-#include "video.hpp"
 
-void get_parameters(int argc, char **argv, int& segment_size, std::string& in_video, std::string& out_video, 
-                    std::string& detector, std::string& detector_cfg, std::string& tmp_folder)
-{
-    int opt;
-    while((opt = getopt(argc, argv, "s:i:o:d:c:f:h")) != -1)
-    {
-        switch (opt)
-        {
-            case 's':
-                segment_size = std::stoi(optarg);
-                break;
-            case 'i':
-                in_video = optarg;
-                break;
-            case 'o':
-                out_video = optarg;
-                break;
-            case 'd':
-                detector = optarg;
-                break;
-            case 'c':
-                detector_cfg = optarg;
-                break;
-            case 'f':
-                tmp_folder = optarg;
-                break;
-            case 'h':
-                utils::printing::print_usage_info();
-                exit(0);
-            default:
-                std::cout << "Unsupported parameter passed to the script. Aborting." << std::endl;
-                utils::printing::print_usage_info();
-                abort();
-        }
-    }
-}
 
-void verify_parameters(int segment_size, std::string in_video, std::string out_video, 
-                       std::string detector, std::string detector_cfg, std::string tmp_folder)
-{
-    if (segment_size < 2)
-    {
-        std::cout << "Segment size has to be at least 3. Aborting.";
-        exit(0);
-    }
-    if (in_video == "")
-    {
-        std::cout << "Please specify input video path. Aborting.";
-        exit(0);
-    }
-    if (out_video == "")
-    {
-        std::cout << "Please specify output video path. Aborting.";
-        exit(0);
-    }
-    if (detector != "yolo" && detector != "ssd")
-    {
-        std::cout << "Unsupported detector. Aborting.";
-        exit(0);
-    }
-    if (detector_cfg == "")
-    {
-        std::cout << "Please specify detector config path. Aborting.";
-        exit(0);
-    }
-    if (tmp_folder == "")
-    {
-        std::cout << "Please specify path where tmp files should be stored. Aborting.";
-        exit(0);
-    }
-}
-
-void detect(std::string detector, std::string detector_cfg, const video::info &video_info) 
-{
-    std::stringstream ss;
-    ss << "python3 ../detectors/detect.py --detector " << detector 
-       << " --cfg " << detector_cfg
-       << " --video " << video_info.tmp_video
-       << " --tmp_folder " << video_info.tmp_folder
-       << " --frame_cnt " << std::to_string(video_info.frame_cnt - 1);
-    std::string detect_command = ss.str();
-    std::cout << "Executing: " << detect_command << std::endl;
-    system(detect_command.c_str());
-}
-
-vector<Node> load_cluster_nodes(std::string csv_file, const video::info video_info, const cv::Mat &frame, int frame_id) 
+vector<Node> Tracker::load_cluster_nodes(std::string csv_file, const cv::Mat &frame, int frame_id) 
 {
     vector<Node> nodes;
     std::ifstream f(csv_file);
@@ -172,7 +61,7 @@ vector<Node> load_cluster_nodes(std::string csv_file, const video::info video_in
     return nodes;
 }
 
-vector2d<Node> load_nodes(const video::info video_info) 
+vector2d<Node> Tracker::load_nodes()
 {
     // loads a vector of Node for each frame
     vector2d<Node> nodes(video_info.frame_cnt, vector<Node>());
@@ -182,13 +71,13 @@ vector2d<Node> load_nodes(const video::info video_info)
         ss << video_info.tmp_folder << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
         cv::Mat frame = cv::imread(utils::get_frame_path(i, video_info.tmp_folder));
-        nodes[i] = load_cluster_nodes(csv_path, video_info, frame, i);
+        nodes[i] = load_cluster_nodes(csv_path, frame, i);
     }
     Node::print_nodes(nodes);
     return nodes;
 }
 
-int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int seg_counter, int start, const video::info &video_info)
+int Tracker::get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int seg_counter, int start)
 {
     int min_detections_in_segment_cnt = 1000;
     for (size_t i = 0; i < video_info.segment_size; i++)
@@ -201,7 +90,7 @@ int get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int seg_count
     return min_detections_in_segment_cnt;
 }
 
-vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, const video::info &video_info)
+vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
 {
     // returns a vector of tracklets for each segment
     vector2d<Tracklet> tracklets(video_info.segment_cnt, vector<Tracklet>());
@@ -219,7 +108,7 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, const video::info &video
         // at this stage there is a strong need for fighting with occlusions
 
         int start = seg_counter * video_info.segment_size;
-        int min_detections_in_segment_cnt = get_min_detections_in_segment_cnt(nodes, seg_counter, start, video_info);
+        int min_detections_in_segment_cnt = get_min_detections_in_segment_cnt(nodes, seg_counter, start);
 
         vector<IOU> ious;
         // get the ious of subsequent frame detections
@@ -326,9 +215,9 @@ vector2d<Tracklet> get_tracklets(vector2d<Node> &nodes, const video::info &video
     return tracklets;
 }
 
-void merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
+void Tracker::merge_tracklets(vector2d<Tracklet> &tracklets)
 {
-    for (size_t i = 2; i < segment_cnt; i += 2)
+    for (size_t i = 2; i < video_info.segment_cnt; i += 2)
     {
         std::cout << "SMCP in segment: " << i << std::endl;
         int minimum = std::min({tracklets[i - 2].size(), tracklets[i - 1].size(), tracklets[i].size()});
@@ -379,32 +268,11 @@ void merge_tracklets(vector2d<Tracklet> &tracklets, int segment_cnt)
     }
 }
 
-int main(int argc, char **argv) {
-    auto begin = std::chrono::steady_clock::now();
-    int segment_size = 0;
-    std::string in_video, out_video, detector, detector_cfg, tmp_folder;
-    get_parameters(argc, argv, segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
-    verify_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
-    utils::printing::print_parameters(segment_size, in_video, out_video, detector, detector_cfg, tmp_folder);
-    utils::sys::clear_tmp(tmp_folder);
-    utils::sys::make_tmp_dirs(tmp_folder);
-    cv::VideoCapture in_cap(in_video);
-    video::info video_info = video::get_video_info(in_cap, segment_size, tmp_folder);
-    video::prepare_tmp_video(in_cap, video_info, in_video);
-
-    auto detect_begin = std::chrono::steady_clock::now();
-    detect(detector, detector_cfg, video_info);
-    auto detect_end = std::chrono::steady_clock::now();
-
-    vector2d<Node> nodes = load_nodes(video_info);
-    int max_nodes_per_cluster = Node::get_max_nodes_per_cluster(nodes);
-    vector2d<Tracklet> tracklets = get_tracklets(nodes, video_info);
-    merge_tracklets(tracklets, video_info.segment_cnt);
+void Tracker::track(const std::string& out_video)
+{
+    vector2d<Node> nodes = load_nodes();
+    vector2d<Tracklet> tracklets = get_tracklets(nodes);
+    merge_tracklets(tracklets);
     Tracklet::draw_tracklets(tracklets);
     video::merge_frames(out_video, video_info);
-    utils::sys::clear_tmp(tmp_folder);
-    auto end = std::chrono::steady_clock::now();
-    utils::printing::print_exec_time(begin, end);
-    utils::printing::print_detect_time(detect_begin, detect_end);
-    return 0;
 }

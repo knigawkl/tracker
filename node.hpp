@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "utils.hpp"
-#include "tracker.hpp"
+#include "templates.hpp"
 
 struct Box
 {
@@ -35,7 +35,6 @@ public:
         set_histogram(frame);
     }
     void print() const;
-    static int get_max_nodes_per_cluster(const vector2d<Node> &nodes);
     static void print_nodes(const vector2d<Node> &nodes);
     static void print_detection_path(const vector<Node> &path);
 

@@ -1,5 +1,5 @@
 #include "node.hpp"
-#include "tracker.hpp"
+#include "templates.hpp"
 
 void Box::print() const
 {
@@ -40,17 +40,6 @@ void Node::print() const
     std::cout << "node_id: " << node_id
               << ", frame_id: " << cluster_id << ", next: " << next_node_id << ", prev: " << prev_node_id << ", ";
     coords.print();
-}
-
-int Node::get_max_nodes_per_cluster(const vector2d<Node> &nodes)
-{
-    // checks what is the biggest number of detections in a single frame
-    int maxi = 0;
-    for (auto const& n : nodes)
-        if (n.size() > maxi)
-            maxi = n.size();
-    std::cout << "Max number of detections per frame is: " << maxi << std::endl;
-    return maxi;
 }
 
 void Node::print_detection_path(const vector<Node> &path)
