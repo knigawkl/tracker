@@ -18,7 +18,6 @@ namespace utils
         void mv(std::string what, std::string where);
         void cp(std::string what, std::string where);
     }
-
     namespace printing
     {
         void print_usage_info();
@@ -27,13 +26,11 @@ namespace utils
         void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
         void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
     }
-
     namespace regression
     {
         std::pair<double, double> get_linear_fit(vector<double> x, vector<double> y, int n);
         double euclidean_dist(double x1, double y1, double x2, double y2);
     }
-
     vector<cv::Scalar> get_colors(int vec_len);
     std::string get_frame_path(int frame, std::string tmp_folder);
 }

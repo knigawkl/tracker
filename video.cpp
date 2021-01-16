@@ -4,7 +4,7 @@
 
 namespace video
 {
-    info get_video_info(const cv::VideoCapture& cap, int segment_size, const std::string& tmp_folder)
+    vidinfo get_video_info(const cv::VideoCapture& cap, int segment_size, const std::string& tmp_folder)
     {
         const double fps = cap.get(cv::CAP_PROP_FPS);
         const int video_w = cap.get(cv::CAP_PROP_FRAME_WIDTH);
@@ -12,14 +12,14 @@ namespace video
         const int frame_cnt = video::get_trimmed_frame_cnt(cap, segment_size);
         const int segment_cnt = frame_cnt / segment_size;
         const std::string tmp_video = tmp_folder + "/input.mp4";
-        info video_info = {
+        vidinfo video_info = {
             .frame_cnt = frame_cnt,
             .segment_size = segment_size,
             .segment_cnt = segment_cnt,
             .width = video_w,
             .height = video_h,
             .fps = fps,
-            .tmp_folder = tmp_folder,
+            .tmp_dir = tmp_folder,
             .tmp_video = tmp_video
         };
         return video_info;
@@ -57,12 +57,12 @@ namespace video
         system(trim_command.c_str());
     }
 
-    void prepare_tmp_video(const cv::VideoCapture& in_cap, const info& video_info, const std::string& in_video)
+    void prepare_tmp_video(const cv::VideoCapture& in_cap, const vidinfo& video_info, const std::string& in_video)
     {
         const int video_in_frame_cnt = get_video_capture_frame_cnt(in_cap);
         if (video_in_frame_cnt != video_info.frame_cnt)
         {
-            std::string const trimmed_video = video_info.tmp_folder + "/trim.mp4";
+            std::string const trimmed_video = video_info.tmp_dir + "/trim.mp4";
             trim_video(in_video, trimmed_video, video_info.frame_cnt);
             std::cout << "Input video frames count cut to: " << video_info.frame_cnt << std::endl;
             utils::sys::mv(trimmed_video, video_info.tmp_video);
@@ -73,10 +73,10 @@ namespace video
         }
     }
 
-    void merge_frames(std::string out_video, const video::info& video_info)
+    void merge_frames(std::string out_video, const video::vidinfo& video_info)
     {
         std::stringstream ss;
-        ss << "ffmpeg -framerate " << video_info.fps << " -i " << video_info.tmp_folder 
+        ss << "ffmpeg -framerate " << video_info.fps << " -i " << video_info.tmp_dir
            << "/img/frame%05d.jpeg -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p " << out_video << " -y";
         std::string merge_command = ss.str();
         std::cout << "Executing: " << merge_command << std::endl;

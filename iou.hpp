@@ -5,11 +5,11 @@
 
 struct IOU
 {
-    int frame;
-    int id1;
-    int id2;
+public:
+    int start_frame;
+    int detection_id1;
+    int detection_id2;
     float value;
-
     void print() const;
     static bool iou_cmp(const IOU& a, const IOU& b);
 };

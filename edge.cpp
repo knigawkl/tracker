@@ -14,10 +14,10 @@ double Edge::get_motion_cost(const Box &start, const Box &end)
 
 void Edge::print() const
 {
-     std::cout << "start_node_id: " << start_node_id
-               << ", end_node_id: " << end_node_id
-               << ", start_node_cluster_id: " << start_node_cluster_id
-               << ", end_node_cluster_id: " << end_node_cluster_id
+     std::cout << "start_node_id: " << start.id
+               << ", end_node_id: " << end.id
+               << ", start_node_cluster_id: " << start.cluster_id
+               << ", end_node_cluster_id: " << end.cluster_id
                << ", weight: " << weight << std::endl;
 }
 

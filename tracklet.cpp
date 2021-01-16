@@ -51,7 +51,7 @@ void Tracklet::draw() const
     constexpr int const line_thickness = 2; 
     for (const Node& node: detection_track)
     {
-        auto path = utils::get_frame_path(node.cluster_id, video_info.tmp_folder);
+        auto path = utils::get_frame_path(node.cluster_id, video_info.tmp_dir);
         cv::Mat img = cv::imread(path);
         cv::Rect rect(node.coords.x_min, node.coords.y_min, node.coords.width, node.coords.height);
         cv::rectangle(img, rect, color, line_thickness);
@@ -124,9 +124,9 @@ void Tracklet::eliminate_outliers()
 
         std::cout << "current_center_dist\t" << current_center_dist << std::endl;
         std::cout << "avg_center_dist\t" << avg_center_dist << std::endl;
-        std::cout << "outlier_coeff * avg_center_dist\t" << outlier_coeff * avg_center_dist << std::endl;
+        std::cout << "outlier_coeff * avg_center_dist\t" << OUTLIER_COEFF * avg_center_dist << std::endl;
 
-        if (current_center_dist > outlier_coeff * avg_center_dist)
+        if (current_center_dist > OUTLIER_COEFF * avg_center_dist)
         {
             std::pair<double, double> linear_fit = utils::regression::get_linear_fit(x, y, len - 1);
             std::cout << "a: " << linear_fit.first << std::endl;

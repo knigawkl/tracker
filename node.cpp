@@ -3,7 +3,7 @@
 
 void Box::print() const
 {
-    std::cout << "x: " << x << ", y: " << y << ", id: " << id
+    std::cout << "x: " << x << ", y: " << y 
                 << ", x_min: " << x_min << ", y_min: " << y_min 
                 << ", x_max: " << x_max << ", y_max: " << y_max 
                 << ", height: " << height << ", width: " << width 
@@ -37,7 +37,7 @@ void Node::set_histogram(const cv::Mat &frame)
 
 void Node::print() const
 {
-    std::cout << "node_id: " << node_id
+    std::cout << "node_id: " << id
               << ", frame_id: " << cluster_id << ", next: " << next_node_id << ", prev: " << prev_node_id << ", ";
     coords.print();
 }

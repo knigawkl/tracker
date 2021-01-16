@@ -7,6 +7,6 @@ bool IOU::iou_cmp(const IOU& a, const IOU& b)
 
 void IOU::print() const
 {
-    std::cout << "frame: " << frame << ", id1: " << id1 << ", id2: " << id2
+    std::cout << "frame: " << start_frame << ", id1: " << detection_id1 << ", id2: " << detection_id2
               << ", value: " << value << std::endl;
 }

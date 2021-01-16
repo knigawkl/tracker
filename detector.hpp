@@ -6,8 +6,9 @@
 class Detector
 {
 public:
-    std::string type;
-    std::string cfg;
-    Detector(const std::string& detector, const std::string& detector_cfg): type(detector), cfg(detector_cfg) {};
-    void detect(const video::info& video_info);
+    Detector(const std::string& type, const std::string& cfg): type(type), cfg(cfg) {};
+    void detect(const video::vidinfo& video_info);
+private:
+    const std::string type;
+    const std::string cfg;
 };

@@ -45,7 +45,6 @@ vector<Node> Tracker::load_cluster_nodes(std::string csv_file, const cv::Mat &fr
         Box d = {
             .x = x_center,
             .y = y_center,
-            .id = id,
             .x_min = x_min,
             .y_min = y_min,
             .x_max = x_max,
@@ -68,25 +67,25 @@ vector2d<Node> Tracker::load_nodes()
     for (size_t i = 0; i < video_info.frame_cnt; i += 1) 
     {
         std::stringstream ss;
-        ss << video_info.tmp_folder << "/csv/frame" << i << ".csv";
+        ss << video_info.tmp_dir << "/csv/frame" << i << ".csv";
         std::string csv_path = ss.str();
-        cv::Mat frame = cv::imread(utils::get_frame_path(i, video_info.tmp_folder));
+        cv::Mat frame = cv::imread(utils::get_frame_path(i, video_info.tmp_dir));
         nodes[i] = load_cluster_nodes(csv_path, frame, i);
     }
     Node::print_nodes(nodes);
     return nodes;
 }
 
-int Tracker::get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int seg_counter, int start)
+int Tracker::get_min_detections_in_segment_cnt(const vector2d<Node> &nodes, int segment_idx, int start_frame_idx)
 {
     int min_detections_in_segment_cnt = 1000;
     for (size_t i = 0; i < video_info.segment_size; i++)
     {
-        int detections_in_frame_cnt = nodes[start+i].size();
+        int detections_in_frame_cnt = nodes[start_frame_idx+i].size();
         if (detections_in_frame_cnt < min_detections_in_segment_cnt)
             min_detections_in_segment_cnt = detections_in_frame_cnt;
     }
-    std::cout << "Min detections in segment " << seg_counter+1 << "/" << video_info.segment_cnt << ": " << min_detections_in_segment_cnt << std::endl;
+    std::cout << "Min detections in segment " << segment_idx+1 << "/" << video_info.segment_cnt << ": " << min_detections_in_segment_cnt << std::endl;
     return min_detections_in_segment_cnt;
 }
 
@@ -123,9 +122,9 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                     if (val > 0)  // this should be some threshold rather than zero
                     { 
                         IOU iou = {
-                            .frame = start + i,
-                            .id1 = j,
-                            .id2 = k,
+                            .start_frame = start + i,
+                            .detection_id1 = j,
+                            .detection_id2 = k,
                             .value = val
                         };
                         ious.push_back(iou);
@@ -136,11 +135,11 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
         std::sort(ious.begin(), ious.end(), IOU::iou_cmp);
         for(auto const& iou: ious)
         {
-            if (nodes[iou.frame][iou.id1].next_node_id == -1 && nodes[iou.frame + 1][iou.id2].prev_node_id == -1)  // if next node not set as yet
+            if (nodes[iou.start_frame][iou.detection_id1].next_node_id == -1 && nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id == -1)  // if next node not set as yet
             {
                 iou.print();
-                nodes[iou.frame][iou.id1].next_node_id = iou.id2;
-                nodes[iou.frame + 1][iou.id2].prev_node_id = iou.id1;
+                nodes[iou.start_frame][iou.detection_id1].next_node_id = iou.detection_id2;
+                nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id = iou.detection_id1;
             }
         }
 
@@ -159,9 +158,7 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                     for (size_t k = 0; k < nodes[start + i + 1].size(); k++)
                     {
                         if (nodes[start + i + 1][k].prev_node_id == -1)
-                        {
                             frame_edges.push_back(Edge(nodes[start + i][j], nodes[start + i + 1][k]));
-                        }
                     }
                 }
             }
@@ -171,17 +168,16 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
             std::sort(frame_edges.begin(), frame_edges.end(), Edge::edge_cmp);
             for (auto e: frame_edges)
             {
-                if (nodes[start + i][e.start_node_id].next_node_id == -1 && nodes[start + i + 1][e.end_node_id].prev_node_id == -1)
+                if (nodes[start + i][e.start.id].next_node_id == -1 && nodes[start + i + 1][e.end.id].prev_node_id == -1)
                 {
-                    nodes[start + i][e.start_node_id].next_node_id = e.end_node_id;
-                    nodes[start + i + 1][e.end_node_id].prev_node_id = e.start_node_id;
+                    nodes[start + i][e.start.id].next_node_id = e.end.id;
+                    nodes[start + i + 1][e.end.id].prev_node_id = e.start.id;
                     connections_needed--;
                     if (!connections_needed)
                         break;
                 }
             } 
         }
-
         for (size_t i = 0; i < nodes[start].size(); i++)
         {
             vector<int> tracklet_ids;
@@ -190,24 +186,19 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
             int next = node.next_node_id;
             if (next == -1)
                 continue;
-
             for (size_t j = 1; j < video_info.segment_size; j++)
             {
                 node = nodes[start + j][next];
-                tracklet_ids.push_back(node.node_id);
+                tracklet_ids.push_back(node.id);
                 next = node.next_node_id;
                 if (next == -1)
                     break;
             }
-
             if (tracklet_ids.size() != video_info.segment_size)
                 continue;
-
             vector<Node> tracklet_nodes;
             for (size_t j = 0; j < video_info.segment_size; j++)
-            {
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
-            }
             tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_info));
         }
     }

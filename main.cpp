@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     utils::sys::clear_tmp(tmp_folder);
     utils::sys::make_tmp_dirs(tmp_folder);
     cv::VideoCapture in_cap(in_video);
-    video::info video_info = video::get_video_info(in_cap, segment_size, tmp_folder);
+    video::vidinfo video_info = video::get_video_info(in_cap, segment_size, tmp_folder);
     video::prepare_tmp_video(in_cap, video_info, in_video);
 
     auto detector = Detector(detector_type, detector_cfg);

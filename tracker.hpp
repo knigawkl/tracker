@@ -19,8 +19,8 @@
 class Tracker
 {
 public:
-    video::info video_info;
-    Tracker(const video::info& video_info): video_info(video_info) {};
+    video::vidinfo video_info;
+    Tracker(const video::vidinfo& video_info): video_info(video_info) {};
     void track(const std::string& out_video);
 private:
     vector<Node> load_cluster_nodes(std::string csv_file, const cv::Mat &frame, int frame_id);

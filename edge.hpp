@@ -7,28 +7,19 @@
 class Edge
 {
 public:
-    int start_node_id;
-    int end_node_id;
-    int start_node_cluster_id;
-    int end_node_cluster_id;
+    Node start;
+    Node end;
     double weight;
-
-    Edge(const Node &start, const Node &end)
+    Edge(const Node &start, const Node &end): start(start), end(end)
     {
-        start_node_id = start.node_id;
-        end_node_id = end.node_id;
-        start_node_cluster_id = start.cluster_id;
-        end_node_cluster_id = end.cluster_id;
         double appearance_cost = get_appearance_cost(start.histogram, end.histogram);
         double motion_cost = get_motion_cost(start.coords, end.coords);
         std::cout << "appearance_cost " << appearance_cost;
         std::cout << ", motion_cost " << motion_cost << std::endl;
-
         weight = appearance_cost + motion_cost;
     }
     void print() const;
     static bool edge_cmp(const Edge& a, const Edge& b);
-
 private:
     static constexpr double const MOTION_COEFF = 0.01;
     static constexpr int const CV_COMP_INTERSECT = 3;
