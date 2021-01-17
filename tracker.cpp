@@ -119,7 +119,7 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                 {
                     
                     float val = nodes[start + i][j].coords.calc_iou(nodes[start + i + 1][k].coords);
-                    if (val > 0)  // this should be some threshold rather than zero
+                    if (val > 0)
                     { 
                         IOU iou = {
                             .start_frame = start + i,
@@ -127,6 +127,7 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                             .detection_id2 = k,
                             .value = val
                         };
+                        iou.print();
                         ious.push_back(iou);
                     }
                 }
@@ -134,14 +135,12 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
         }
         std::sort(ious.begin(), ious.end(), IOU::iou_cmp);
         for(auto const& iou: ious)
-        {
             if (nodes[iou.start_frame][iou.detection_id1].next_node_id == -1 && nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id == -1)  // if next node not set as yet
             {
                 iou.print();
                 nodes[iou.start_frame][iou.detection_id1].next_node_id = iou.detection_id2;
                 nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id = iou.detection_id1;
             }
-        }
 
         // now we have to connect the nodes that still lack prev/next pointers 
         for (size_t i = 0; i < video_info.segment_size - 1; i++)  // for each frame in the segment except for the last one
@@ -153,21 +152,19 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                 if (nodes[start + i][j].next_node_id > -1)  // if the detection already has next pointer go to the next detection
                     detections_with_next_in_frame++;
                 else
-                {
                     // if the detection does not have next pointer, then we calculate its hiks with detections from next frame that lack prev pointer
                     for (size_t k = 0; k < nodes[start + i + 1].size(); k++)
-                    {
                         if (nodes[start + i + 1][k].prev_node_id == -1)
                             frame_edges.push_back(Edge(nodes[start + i][j], nodes[start + i + 1][k]));
-                    }
-                }
             }
             int connections_needed = min_detections_in_segment_cnt - detections_with_next_in_frame;
-            if (!connections_needed)
+            std::cout << "connections_needed: " << connections_needed << std::endl;
+            std::cout << "min_detections_in_segment_cnt: " << min_detections_in_segment_cnt << std::endl;
+            std::cout << "detections_with_next_in_frame: " << detections_with_next_in_frame << std::endl;
+            if (connections_needed < 1)
                 continue;
             std::sort(frame_edges.begin(), frame_edges.end(), Edge::edge_cmp);
             for (auto e: frame_edges)
-            {
                 if (nodes[start + i][e.start.id].next_node_id == -1 && nodes[start + i + 1][e.end.id].prev_node_id == -1)
                 {
                     nodes[start + i][e.start.id].next_node_id = e.end.id;
@@ -176,32 +173,98 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
                     if (!connections_needed)
                         break;
                 }
-            } 
         }
+
         for (size_t i = 0; i < nodes[start].size(); i++)
         {
+            std::cout << "Tracklet " << i << std::endl;
             vector<int> tracklet_ids;
             Node node = nodes[start][i];
-            tracklet_ids.push_back(i);
-            int next = node.next_node_id;
-            if (next == -1)
-                continue;
-            for (size_t j = 1; j < video_info.segment_size; j++)
+            for (size_t j = 0; j < video_info.segment_size; j++)
             {
-                node = nodes[start + j][next];
+                if (j > 0)
+                    node = nodes[start + j][node.next_node_id];
                 tracklet_ids.push_back(node.id);
-                next = node.next_node_id;
-                if (next == -1)
+                if (tracklet_ids.size() == video_info.segment_size)
                     break;
+                if (node.next_node_id == -1 && nodes.size() - 1 > node.cluster_id + 2)
+                {
+                    std::cout << "Looking for missing link" << std::endl;
+                    vector<IOU> ious;
+                    std::cout << "nodes[node.cluster_id + 2].size(): " << nodes[node.cluster_id + 2].size() << std::endl;
+                    for (int k = 0; k < nodes[node.cluster_id + 2].size(); k++)
+                    {
+                        std::cout << "nodes[node.cluster_id + 2][k].prev_node_id: " << nodes[node.cluster_id + 2][k].prev_node_id << std::endl;
+                        if (nodes[node.cluster_id + 2][k].prev_node_id == -1)
+                        {
+                            float val = node.coords.calc_iou(nodes[node.cluster_id + 2][k].coords);
+                            node.print();
+                            nodes[node.cluster_id + 2][k].print();
+
+                            if (val > 0)
+                            { 
+                                IOU iou = {
+                                    .start_frame = node.cluster_id,
+                                    .detection_id1 = node.id,
+                                    .detection_id2 = k,
+                                    .value = val
+                                };
+                                ious.push_back(iou);
+                                iou.print();
+                            }
+                        }
+                    }
+                    std::sort(ious.begin(), ious.end(), IOU::iou_cmp);
+                    if (!ious.empty())
+                    {
+                        auto found = ious.front();
+                        found.print();
+                        Node next_next = nodes[found.start_frame + 2][found.detection_id2];
+                        int x_center = (node.coords.x + next_next.coords.x) / 2; 
+                        int y_center = (node.coords.y + next_next.coords.y) / 2;
+                        int height = (node.coords.height + next_next.coords.height) / 2;
+                        int width = (node.coords.width + next_next.coords.width) / 2;
+                        int x_min = (node.coords.x_min + next_next.coords.x_min) / 2;
+                        int x_max = (node.coords.x_max + next_next.coords.x_max) / 2;
+                        int y_min = (node.coords.y_min + next_next.coords.y_min) / 2;
+                        int y_max = (node.coords.y_max + next_next.coords.y_max) / 2;
+                        float area = (node.coords.area + next_next.coords.area) / 2;
+                        Box b = {
+                            .x = x_center,
+                            .y = y_center,
+                            .x_min = x_min,
+                            .y_min = y_min,
+                            .x_max = x_max,
+                            .y_max = y_max,
+                            .height = height,
+                            .width = width,
+                            .area = area
+                        };
+                        Node hypothetical = Node(b, nodes[node.cluster_id + 1].size(), node.cluster_id + 1, node.histogram);
+                        hypothetical.prev_node_id = node.id;
+                        hypothetical.next_node_id = next_next.id;
+                        nodes[node.cluster_id + 1].push_back(hypothetical);
+                        node.next_node_id = nodes[node.cluster_id + 1].size() - 1;
+                    }
+                    else
+                        break;
+                }
             }
             if (tracklet_ids.size() != video_info.segment_size)
+            {
+                std::cout << "Incomplete tracklet" << std::endl;
                 continue;
+            }
             vector<Node> tracklet_nodes;
+            for (const auto& id: tracklet_ids)
+                std::cout << id << " ";
+            std::cout << std::endl;
             for (size_t j = 0; j < video_info.segment_size; j++)
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_info));
         }
     }
+    Node::print_nodes(nodes);
     Tracklet::print_tracklets(tracklets);
     return tracklets;
 }
@@ -241,8 +304,6 @@ void Tracker::merge_tracklets(vector2d<Tracklet> &tracklets)
             Clique min_clique = cliques.front();
             solution.push_back(min_clique);
             vector<Clique> slimmed_cliques;
-            // na tym etapie trzeba już wykrywaź odchylenia w trackletach -> jeśli dodajemy tracklet hipotetyczny, to nie slimujemy, więc ify będą trzy
-            // trzeba wymyślić sposób na faworyzowanie rozwiązania odnalezionego nad hipotetycznym
             for (const Clique& c: cliques)
                 if (c.tracklet_idx1 != min_clique.tracklet_idx1 && c.tracklet_idx2 != min_clique.tracklet_idx2 && c.tracklet_idx3 != min_clique.tracklet_idx3)
                     slimmed_cliques.push_back(c);

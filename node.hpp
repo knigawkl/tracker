@@ -33,6 +33,8 @@ public:
     {
         set_histogram(frame);
     }
+    Node(const Box &d, int detection_id, int frame_id, const cv::Mat &histogram): 
+         coords(d), id(detection_id), cluster_id(frame_id), histogram(histogram) {}
     void print() const;
     static void print_nodes(const vector2d<Node> &nodes);
     static void print_detection_path(const vector<Node> &path);
