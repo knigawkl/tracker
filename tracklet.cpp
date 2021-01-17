@@ -25,7 +25,6 @@ void Tracklet::set_histogram()
     int seg_size = detection_track.size();
     double anti_overflow_coeff = 1.0 / seg_size;
     auto tracklet_histogram = detection_track[0].histogram * anti_overflow_coeff;
-    
     for (size_t i = 1; i < detection_track.size(); i++)
         tracklet_histogram += detection_track[i].histogram * anti_overflow_coeff;
     centroid.histogram = tracklet_histogram;

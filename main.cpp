@@ -95,11 +95,14 @@ int main(int argc, char **argv) {
     auto detect_end = std::chrono::steady_clock::now();
 
     auto tracker = Tracker(video_info);
+    auto track_begin = std::chrono::steady_clock::now();
     tracker.track(out_video);
+    auto track_end = std::chrono::steady_clock::now();
 
     utils::sys::clear_tmp(tmp_folder);
     auto end = std::chrono::steady_clock::now();
-    utils::printing::print_exec_time(begin, end);
     utils::printing::print_detect_time(detect_begin, detect_end);
+    utils::printing::print_track_time(track_begin, track_end);
+    utils::printing::print_exec_time(begin, end);
     return 0;
 }

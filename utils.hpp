@@ -25,6 +25,7 @@ namespace utils
                               std::string detector, std::string detector_cfg, std::string tmp_folder);
         void print_exec_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
         void print_detect_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
+        void print_track_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end);
     }
     namespace regression
     {

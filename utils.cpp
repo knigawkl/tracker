@@ -47,21 +47,6 @@ namespace utils
         }
     }
 
-    vector<cv::Scalar> get_colors(int vec_len)
-    {    
-        vector<cv::Scalar> colors;
-        colors.reserve(vec_len);
-        uint8_t r, g, b;
-        for (size_t i = 0; i < vec_len; i++)
-        {
-            b = rand() % 256;
-            r = rand() % 256;
-            g = rand() % 256;
-            colors.push_back(cv::Scalar(b, g, r));
-        }
-        return colors;
-    }
-
     std::string get_frame_path(int frame, std::string tmp_folder)
     {
         std::stringstream ss;
@@ -108,6 +93,13 @@ namespace utils
             std::cout << "Detection took = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
                     << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
                     << "[s])" << std::endl;
+        }
+        
+        void print_track_time(std::chrono::steady_clock::time_point begin, std::chrono::steady_clock::time_point end)
+        {
+            std::cout << "Tracking took = " << std::chrono::duration_cast<std::chrono::minutes>(end - begin).count() 
+                      << "[min] (" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count()  
+                      << "[s])" << std::endl;
         }
     }
 
