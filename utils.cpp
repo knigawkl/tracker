@@ -63,7 +63,7 @@ namespace utils
             "\n    -s, --segment_size   frames in a segment\n"
             "    -i, --in_video         input video path\n"
             "    -o, --out_video        output video path\n"
-            "    -d, --detector         object detector (ssd or yolo)\n"
+            "    -d, --detector         object detector (ssd or yolo or fchd)\n"
             "    -c, --detector_cfg     path to detector cfg\n"
             "    -f, --tmp_folder       path to folder where temporary files will be stored\n"
             "    -h, --help             show this help msg";
