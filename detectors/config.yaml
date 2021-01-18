@@ -1,5 +1,5 @@
 ssd:
-  confidence_threshold: 0.1
+  confidence_threshold: 0.3
   nms_max_output_size: 400
   top_k: 200
   iou_threshold: 0.4

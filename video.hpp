@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 #include <opencv2/opencv.hpp>
 
 
@@ -22,5 +24,5 @@ namespace video
     int get_trimmed_frame_cnt(const cv::VideoCapture& cap, int frames_in_segment);
     void trim_video(std::string video_in, std::string video_out, int frame_cnt);
     void prepare_tmp_video(const cv::VideoCapture& in_cap, const vidinfo& video_info, const std::string& in_video);
-    void merge_frames(std::string out_video, const video::vidinfo& video_info);
+    void merge_frames(std::string_view out_video, const video::vidinfo& video_info);
 }

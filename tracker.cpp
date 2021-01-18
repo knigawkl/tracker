@@ -320,7 +320,7 @@ void Tracker::merge_tracklets(vector2d<Tracklet> &tracklets)
     }
 }
 
-void Tracker::track(const std::string& out_video)
+void Tracker::track(std::string_view out_video)
 {
     vector2d<Node> nodes = load_nodes();
     vector2d<Tracklet> tracklets = get_tracklets(nodes);

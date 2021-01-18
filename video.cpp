@@ -73,11 +73,11 @@ namespace video
         }
     }
 
-    void merge_frames(std::string out_video, const video::vidinfo& video_info)
+    void merge_frames(std::string_view out_video, const video::vidinfo& video_info)
     {
         std::stringstream ss;
         ss << "ffmpeg -framerate " << video_info.fps << " -i " << video_info.tmp_dir
-           << "/img/frame%05d.jpeg -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p " << out_video << " -y";
+            << "/img/frame%05d.jpeg -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p " << out_video << " -y";
         std::string merge_command = ss.str();
         std::cout << "Executing: " << merge_command << std::endl;
         system(merge_command.c_str());
