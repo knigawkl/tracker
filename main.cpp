@@ -59,7 +59,7 @@ void verify_parameters(int segment_size, std::string in_video, std::string out_v
         std::cout << "Please specify output video path. Aborting.";
         exit(0);
     }
-    if (detector != "yolo" && detector != "ssd")
+    if (detector != "yolo" && detector != "ssd" && detector != "fchd")
     {
         std::cout << "Unsupported detector. Aborting.";
         exit(0);

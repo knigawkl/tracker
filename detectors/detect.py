@@ -6,6 +6,7 @@ import csv
 
 from run_ssd import SSDDetector
 from run_yolo import YOLODetector
+from run_fchd import FCHDDetector
 from utils.logger import logger
 
 # import os
@@ -17,7 +18,7 @@ def load_args():
     p.add_argument("--detector",
                     type=str,
                     required=True,
-                    choices=["ssd", "yolo"],
+                    choices=["ssd", "yolo", "fchd"],
                     help="detector name")
     p.add_argument("--cfg",
                     type=str,
@@ -49,6 +50,8 @@ if __name__ == "__main__":
         detector = SSDDetector()
     elif args.detector == "yolo":
         detector = YOLODetector()
+    elif args.detector == "fchd":
+        detector = FCHDDetector()
     detector_cfg = bios.read(args.cfg)[args.detector]
 
     video = imageio.get_reader(args.video, "ffmpeg")

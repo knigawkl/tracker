@@ -93,6 +93,7 @@ bool Tracklet::is_start_of_trajectory() const
 void Tracklet::eliminate_outliers()
 {
     int len = detection_track.size();
+    Node::print_detection_path(detection_track);
     for (size_t i = 0; i < len; i++)  // for each detection in this tracklet
     {
         vector<double> x;  // x coordinates of detections in this tracklet apart from current
@@ -130,6 +131,7 @@ void Tracklet::eliminate_outliers()
             std::pair<double, double> linear_fit = utils::regression::get_linear_fit(x, y, len - 1);
             std::cout << "a: " << linear_fit.first << std::endl;
             std::cout << "b: " << linear_fit.second << std::endl;
+            std::cout << "Regression line: y=" << linear_fit.first << "x + " << linear_fit.second << std::endl;
             if (i == 0) {
                 detection_track[i].coords.x = detection_track[i + 1].coords.x - (detection_track[i + 2].coords.x - detection_track[i + 1].coords.x);
                 detection_track[i].coords.width = detection_track[i + 1].coords.width;
@@ -155,12 +157,16 @@ void Tracklet::eliminate_outliers()
             detection_track[i].coords.y_max = detection_track[i].coords.y + detection_track[i].coords.height / 2;
             detection_track[i].coords.y_min = detection_track[i].coords.y - detection_track[i].coords.height / 2;
 
+            detection_track[i].print();
+
             set_centroid();
             is_end_of_traj =  is_end_of_trajectory();
             is_start_of_traj =  is_start_of_trajectory();
             is_hypothetical = true;
         }
     }
+    std::cout << "Smoothed tracklet: " << std::endl;
+    Node::print_detection_path(detection_track);
 }
 
 

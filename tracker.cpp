@@ -135,12 +135,11 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
         }
         std::sort(ious.begin(), ious.end(), IOU::iou_cmp);
         for(auto const& iou: ious)
-            if (nodes[iou.start_frame][iou.detection_id1].next_node_id == -1 && nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id == -1)  // if next node not set as yet
-            {
-                iou.print();
-                nodes[iou.start_frame][iou.detection_id1].next_node_id = iou.detection_id2;
-                nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id = iou.detection_id1;
-            }
+        {
+            iou.print();
+            nodes[iou.start_frame][iou.detection_id1].next_node_id = iou.detection_id2;
+            nodes[iou.start_frame + 1][iou.detection_id2].prev_node_id = iou.detection_id1;
+        }
 
         // now we have to connect the nodes that still lack prev/next pointers 
         for (size_t i = 0; i < video_info.segment_size - 1; i++)  // for each frame in the segment except for the last one
@@ -262,6 +261,8 @@ vector2d<Tracklet> Tracker::get_tracklets(vector2d<Node> &nodes)
             for (size_t j = 0; j < video_info.segment_size; j++)
                 tracklet_nodes.push_back(nodes[start + j][tracklet_ids[j]]);
             tracklets[seg_counter].push_back(Tracklet(tracklet_nodes, video_info));
+
+            // dla każdego węzła w tracklecie, jeśli nie jest taki jak 
         }
     }
     Node::print_nodes(nodes);
