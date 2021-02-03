@@ -21,7 +21,8 @@ from utils.logger import logger
 from base import BaseDetector
 
 # MODEL_PATH = "./fchd/checkpoints/sess:2/head_detector08120858_0.682282441835"
-MODEL_PATH = "./fchd/checkpoints/head_detector_final"
+# MODEL_PATH = "./fchd/checkpoints/head_detector_final"
+MODEL_PATH = "/home/lk/Desktop/tracker-cpp-python/detectors/fchd/checkpoints/head_detector_final"
 THRESH = 0.01
 
 
